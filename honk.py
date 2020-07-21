@@ -36,7 +36,7 @@ def main():
   y = numpy.zeros(n, numpy.float32)
   y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
    
-  program.oscillator(queue, (n,), (1,), a_buf, y_buf)
+  program.oscillator(queue, (n,), (2,), y_buf, a_buf)
   # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
   # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html
   # Args are (queue,global_size,local_size,*args).
