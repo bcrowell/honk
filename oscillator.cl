@@ -4,5 +4,5 @@ __kernel void oscillator(__global const int *A, __global const int *B, __global 
     int i = get_global_id(0);
  
     // Do the operation
-    C[i] = A[i] + B[i];
+    C[i] = A[0];
 }

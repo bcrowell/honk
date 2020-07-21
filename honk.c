@@ -20,10 +20,7 @@ int main(void) {
     const int LIST_SIZE = 1024;
     int *A = (int*)malloc(sizeof(int)*LIST_SIZE);
     int *B = (int*)malloc(sizeof(int)*LIST_SIZE);
-    for(i = 0; i < LIST_SIZE; i++) {
-        A[i] = i;
-        B[i] = LIST_SIZE - i;
-    }
+    A[0] = 6;
  
     // Load the kernel source code into the array source_str
     FILE *fp;
@@ -99,7 +96,7 @@ int main(void) {
  
     // Display the result to the screen
     for(i = 0; i < LIST_SIZE; i++)
-        printf("%d + %d = %d\n", A[i], B[i], C[i]);
+        printf("C[%d] = %d\n", (int) i, (int) C[i]);
  
     // Clean up
     ret = clFlush(command_queue);
