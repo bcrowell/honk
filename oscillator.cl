@@ -1,8 +1,8 @@
-__kernel void oscillator(__global const int *A, __global int *C) {
+__kernel void oscillator(__global const int *a, __global const int *b, __global int *c) {
  
     // Get the index of the current element to be processed
     int i = get_global_id(0);
  
     // Do the operation
-    C[i] = A[0];
+    c[i] = 22;
 }
