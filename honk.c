@@ -19,7 +19,6 @@ int main(void) {
     int i;
     const int LIST_SIZE = 1024;
     int *A = (int*)malloc(sizeof(int)*LIST_SIZE);
-    int *B = (int*)malloc(sizeof(int)*LIST_SIZE);
     A[0] = 6;
  
     // Load the kernel source code into the array source_str
@@ -57,16 +56,12 @@ int main(void) {
     // Create memory buffers on the device for each vector 
     cl_mem a_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, 
             LIST_SIZE * sizeof(int), NULL, &ret);
-    cl_mem b_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY,
-            LIST_SIZE * sizeof(int), NULL, &ret);
     cl_mem c_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 
             LIST_SIZE * sizeof(int), NULL, &ret);
  
     // Copy the lists A and B to their respective memory buffers
     ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
             LIST_SIZE * sizeof(int), A, 0, NULL, NULL);
-    ret = clEnqueueWriteBuffer(command_queue, b_mem_obj, CL_TRUE, 0, 
-            LIST_SIZE * sizeof(int), B, 0, NULL, NULL);
  
     // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1, 
@@ -80,8 +75,7 @@ int main(void) {
  
     // Set the arguments of the kernel
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
-    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&b_mem_obj);
-    ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&c_mem_obj);
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&c_mem_obj);
  
     // Execute the OpenCL kernel on the list
     size_t global_item_size = LIST_SIZE; // Process the entire lists
@@ -104,12 +98,10 @@ int main(void) {
     ret = clReleaseKernel(kernel);
     ret = clReleaseProgram(program);
     ret = clReleaseMemObject(a_mem_obj);
-    ret = clReleaseMemObject(b_mem_obj);
     ret = clReleaseMemObject(c_mem_obj);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
     free(A);
-    free(B);
     free(C);
     return 0;
 }

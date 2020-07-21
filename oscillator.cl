@@ -1,4 +1,4 @@
-__kernel void oscillator(__global const int *A, __global const int *B, __global int *C) {
+__kernel void oscillator(__global const int *A, __global int *C) {
  
     // Get the index of the current element to be processed
     int i = get_global_id(0);
