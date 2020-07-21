@@ -17,7 +17,7 @@
 int main(void) {
     // Create the two input vectors
     int i;
-    const int LIST_SIZE = 128;
+    const int LIST_SIZE = 32;
     int n = 7;
     float x = 1.1;
  
@@ -84,7 +84,7 @@ int main(void) {
  
     // Execute the OpenCL kernel on the list
     size_t global_item_size = LIST_SIZE; // Process the entire lists
-    size_t local_item_size = 64; // Divide work items into groups of 64
+    size_t local_item_size = 16; // Divide work items into groups of 16
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
             &global_item_size, &local_item_size, 0, NULL, NULL);
  
