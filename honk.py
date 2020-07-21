@@ -25,6 +25,9 @@ def main():
   with open('oscillator.cl', 'r') as f:
     opencl_code = f.read()
   program = cl.Program(context,opencl_code).build()
+  #    https://documen.tician.de/pyopencl/runtime_program.html
+  #    build() has optional args about caching compiled code
+  #    "returns self"
    
   queue = cl.CommandQueue(context)
    
@@ -33,7 +36,12 @@ def main():
   y = numpy.zeros(n, numpy.float32)
   y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
    
-  program.oscillator(queue, y.shape, None, a_buf, y_buf)
+  program.oscillator(queue, (n,), (1,), a_buf, y_buf)
+  # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
+  # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html
+  # Args are (queue,global_size,local_size,*args).
+  # global_size is size of m-dim rectangular grid, one work item launched for each point
+  # local_size is size of workgroup, must be an integer divisor of global_size
    
   cl.enqueue_copy(queue, y, y_buf)
    
