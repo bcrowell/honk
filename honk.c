@@ -43,6 +43,7 @@ int main(void) {
     cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
     ret = clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_DEFAULT, 1, 
             &device_id, &ret_num_devices);
+    // ... the 1 seems to be the maximum number of devices we want to hear about
  
     // Create an OpenCL context
     cl_context context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret);
@@ -70,42 +71,60 @@ int main(void) {
     // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1, 
             (const char **)&source_str, (const size_t *)&source_size, &ret);
+    printf("Return value from clCreateProgramWithSource = %d\n",(int) ret);
  
     // Build the program
     ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+    printf("Return value from clBuildProgram = %d\n",(int) ret);
  
-    // Create the OpenCL kernel
-    cl_kernel kernel = clCreateKernel(program, "oscillator", &ret);
+    if (ret!=0) {
+      // Handle compilation error
+      // https://stackoverflow.com/a/29813956
+      char *buff_erro;
+      cl_int errcode;
+      size_t build_log_len;
+      errcode = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &build_log_len);
+      buff_erro = malloc(build_log_len);
+      errcode = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, build_log_len, buff_erro, NULL);
+      fprintf(stderr,"Build log: \n%s\n", buff_erro); //Be careful with  the fprint
+      free(buff_erro);
+      fprintf(stderr,"clBuildProgram failed\n");
+    }
+    else {
+
+      // Create the OpenCL kernel
+      cl_kernel kernel = clCreateKernel(program, "oscillator", &ret);
  
-    // Set the arguments of the kernel
-    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
-    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&b_mem_obj);
-    ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&c_mem_obj);
+      // Set the arguments of the kernel
+      ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&a_mem_obj);
+      ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&b_mem_obj);
+      ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&c_mem_obj);
  
-    // Execute the OpenCL kernel on the list
-    size_t global_item_size = LIST_SIZE; // Process the entire lists
-    size_t local_item_size = 16; // Divide work items into groups of 16
-    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
+      // Execute the OpenCL kernel on the list
+      size_t global_item_size = LIST_SIZE; // Process the entire lists
+      size_t local_item_size = 16; // Divide work items into groups of 16
+      ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
             &global_item_size, &local_item_size, 0, NULL, NULL);
  
-    // Read the memory buffer C on the device to the local variable C
-    int *C = (int*)malloc(sizeof(int)*LIST_SIZE);
-    ret = clEnqueueReadBuffer(command_queue, c_mem_obj, CL_TRUE, 0, 
-            LIST_SIZE * sizeof(int), C, 0, NULL, NULL);
+      // Read the memory buffer C on the device to the local variable C
+      int *C = (int*)malloc(sizeof(int)*LIST_SIZE);
+      ret = clEnqueueReadBuffer(command_queue, c_mem_obj, CL_TRUE, 0, 
+              LIST_SIZE * sizeof(int), C, 0, NULL, NULL);
  
-    // Display the result to the screen
-    for(i = 0; i < LIST_SIZE; i++)
-        printf("C[%d] = %d\n", (int) i, (int) C[i]);
+      for(i = 0; i < LIST_SIZE; i++)
+          printf("C[%d] = %d\n", (int) i, (int) C[i]);
+
+      free(C);
+      ret = clReleaseKernel(kernel);
+    }
  
     // Clean up
     ret = clFlush(command_queue);
     ret = clFinish(command_queue);
-    ret = clReleaseKernel(kernel);
     ret = clReleaseProgram(program);
     ret = clReleaseMemObject(a_mem_obj);
     ret = clReleaseMemObject(c_mem_obj);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
-    free(C);
     return 0;
 }
