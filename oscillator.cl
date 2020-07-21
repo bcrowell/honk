@@ -9,6 +9,6 @@ __kernel void oscillator(__global const int *a, __global const float *b, __globa
 
     c[i] = (n+i)*x;
 
-    if (i>50) {c[i]=0;}
+    if (i>20) {c[i]=0;}
  
 }
