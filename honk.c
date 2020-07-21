@@ -17,7 +17,7 @@
 int main(void) {
     // Create the two input vectors
     int i;
-    const int LIST_SIZE = 1024;
+    const int LIST_SIZE = 128;
     int n = 7;
     float x = 1.1;
  
