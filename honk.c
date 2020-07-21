@@ -18,8 +18,7 @@ int main(void) {
     // Create the two input vectors
     int i;
     const int LIST_SIZE = 1024;
-    int *A = (int*)malloc(sizeof(int)*LIST_SIZE);
-    A[0] = 6;
+    int n = 7;
  
     // Load the kernel source code into the array source_str
     FILE *fp;
@@ -61,7 +60,7 @@ int main(void) {
  
     // Copy the lists A and B to their respective memory buffers
     ret = clEnqueueWriteBuffer(command_queue, a_mem_obj, CL_TRUE, 0,
-            LIST_SIZE * sizeof(int), A, 0, NULL, NULL);
+            sizeof(int), &n, 0, NULL, NULL);
  
     // Create a program from the kernel source
     cl_program program = clCreateProgramWithSource(context, 1, 
@@ -101,7 +100,6 @@ int main(void) {
     ret = clReleaseMemObject(c_mem_obj);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
-    free(A);
     free(C);
     return 0;
 }
