@@ -26,12 +26,9 @@ def main():
   ## Step #4. Create the accelerator program from source code.
   ## Step #5. Build the program.
   ## Step #6. Create one or more kernels from the program functions.
-  program = cl.Program(context, """
-    __kernel void oscillator(__global const float *a, __global float *c) {
-    // Get the index of the current element to be processed
-    int i = get_global_id(0);
-    }
-    """).build()
+  with open('oscillator.cl', 'r') as f:
+    opencl_code = f.read()
+  program = cl.Program(context,opencl_code).build()
    
   ## Step #7. Create a command queue for the target device.
   queue = cl.CommandQueue(context)
