@@ -19,7 +19,7 @@ int main(void) {
     int i;
     const int LIST_SIZE = 32;
     int n = 7;
-    float x = 1.1;
+    float x = 3.1;
  
     // Load the kernel source code into the array source_str
     FILE *fp;

@@ -5,6 +5,8 @@ __kernel void oscillator(__global const int *a, __global const float *b, __globa
 
     int n = a[0];
 
-    c[i] = n+i;
+    float x = b[0];
+
+    c[i] = (n+i)*x;
  
 }
