@@ -23,14 +23,14 @@ __kernel void oscillator(__global FLOAT *y, __global const FLOAT *a) {
   knots[i] = x_i of the ith knot
   n = number of knots
   k = order of polynomial
-  i = initial guess as to the i such that x_i <= x <=x_(i+1); not allowed to be too high, only too low
+  i = pointer to initial guess as to the i such that x_i <= x <=x_(i+1); not allowed to be too high, only too low; gets updated
   x = point at which to evaluate the spline
 */
-FLOAT spline(FLOAT *c,FLOAT *knots,int n,int k,int i,FLOAT x) {
-  while (i<=n-3 && x>knots[i+1]) {i++;}
-  FLOAT d = x-knots[i];
+FLOAT spline(FLOAT *c,FLOAT *knots,int n,int k,int *i,FLOAT x) {
+  while (*i<=n-3 && x>knots[*i+1]) {(*i)++;}
+  FLOAT d = x-knots[*i];
   FLOAT p = 1.0; // (x-x_i)^k-m
-  int j = (n-1)*k+i;
+  int j = (n-1)*k+*i;
   FLOAT s = 0.0;
   for (int m=k; ; m--) {
     s = s + c[j]*p;
