@@ -25,10 +25,14 @@ __kernel void oscillator(__global FLOAT *y, __global const FLOAT *a) {
   k = order of polynomial
   i = pointer to initial guess as to the i such that x_i <= x <=x_(i+1); not allowed to be too high, only too low; gets updated
   x = point at which to evaluate the spline
+  This is designed to be called repeatedly on the same spline with values of x that are non-decreasing.
+  On the first call, *i can be 0, and *i will then be updated automatically.
+  Moving to the left past a knot results in an error unless the caller sets *i back to a lower value or 0.
 */
-FLOAT spline(FLOAT *c,FLOAT *knots,int n,int k,int *i,FLOAT x) {
+FLOAT spline(FLOAT *c,FLOAT *knots,int n,int k,int *i,FLOAT x,int *err) {
   while (*i<=n-3 && x>knots[*i+1]) {(*i)++;}
   FLOAT d = x-knots[*i];
+  if (d<0) {*err= -1; return 0.0;}
   FLOAT p = 1.0; // (x-x_i)^k-m
   int j = (n-1)*k+*i;
   FLOAT s = 0.0;
@@ -38,6 +42,7 @@ FLOAT spline(FLOAT *c,FLOAT *knots,int n,int k,int *i,FLOAT x) {
     p = p*d;
     j -= (n-1);
   }
+  *err = 0;
   return s;
 }
 
