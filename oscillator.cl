@@ -6,16 +6,26 @@
 #include "honk.h"
 
 #ifndef RUN_ON_CPU
-__kernel void oscillator(__global FLOAT *y, __global const FLOAT *a) {
-  // Get the index of the current element to be processed
-  int i = get_global_id(0);
+__kernel void oscillator(__global const int function,
+                         __global FLOAT *y,
+                         __global int *err, __global FLOAT *info,__global int *n_info,
+                         __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4,
+                         __global const long *i_pars, __global const FLOAT *f_pars
+                          ) {
+  int i = get_global_id(0); // index of the current element in the computational grid
+  if (function==HONK_FN_ZETA) {fn_zeta(y,i); *err=0; return;}
+  *err = HONK_ERR_UNDEFINED_FN;
+}
+#endif
+
+// benchmark using the Riemann zeta function
+void fn_zeta(FLOAT *y,int i) {
   FLOAT z;
   for (int j=0; j<10; j++) { // repeat the calculation a bunch of times just so it takes enough time to benchmark; 1000 gives about 10 seconds
     z = zeta((FLOAT) (i*0.001+2));
   }
   y[i] = z;
 }
-#endif
 
 void oscillator_cubic_spline(FLOAT *y,
                              FLOAT *omega_c,FLOAT *omega_knots,int omega_n,

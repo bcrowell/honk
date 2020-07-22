@@ -33,12 +33,35 @@ def main():
    
   queue = cl.CommandQueue(context)
    
-  mem_flags = cl.mem_flags
-  a_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=a)
+  fn = numpy.uint32(1) # zeta function
   y = numpy.zeros(n, numpy.float32)
+  err = numpy.zeros(1, numpy.int32)
+  info = numpy.zeros(100, numpy.float32)
+  n_info = numpy.zeros(1, numpy.int32)
+  v1 = numpy.zeros(100, numpy.float32)
+  v2 = numpy.zeros(100, numpy.float32)
+  v3 = numpy.zeros(100, numpy.float32)
+  v4 = numpy.zeros(100, numpy.float32)
+  i_pars = numpy.zeros(100, numpy.int64)
+  f_pars = numpy.zeros(100, numpy.float32)
+
+  mem_flags = cl.mem_flags
   y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
+  err_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=err)
+  info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=info)
+  n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=n_info)
+  v1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v1)
+  v2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v2)
+  v3_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v3)
+  v4_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v4)
+  i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=i_pars)
+  f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=f_pars)
    
-  program.oscillator(queue, (n,), (64,), y_buf, a_buf)
+  program.oscillator(queue, (n,), (64,),
+                     fn, y_buf,
+                     err_buf,info_buf,n_info_buf,
+                     v1_buf, v2_buf, v3_buf, v4_buf,
+                     i_pars_buf,f_pars_buf)
   # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
   # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html
   # Args are (queue,global_size,local_size,*args).

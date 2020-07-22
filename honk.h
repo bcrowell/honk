@@ -5,3 +5,8 @@ void oscillator_cubic_spline(FLOAT *y,
                              FLOAT *a_c,FLOAT *a_knots,int a_n,
                              FLOAT phase,
                              FLOAT t0,FLOAT dt,int j1,int j2,int *err);
+void fn_zeta(FLOAT *y,int i);
+
+#define HONK_FN_ZETA 1
+
+#define HONK_ERR_UNDEFINED_FN 1
