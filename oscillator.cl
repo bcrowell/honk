@@ -31,7 +31,6 @@ void fn_osc(__global FLOAT *y,int i,
                           v3,v4,i_pars[1],
                           f_pars[0],f_pars[1],f_pars[2],i,i,err
                          );
-  y[i] = i;
 }
 
 
@@ -46,9 +45,9 @@ void oscillator_cubic_spline(__global FLOAT *y,
   for (int j=j1; j<=j2; j++) {
     t = t0 + dt*j;
     omega = spline(omega_c,omega_knots,omega_n,3,&omega_i,t,err);
-    if (err) {return;}
+    if (*err) {return;}
     a     = spline(a_c,    a_knots,    a_n,    3,&a_i,    t,err);
-    if (err) {return;}
+    if (*err) {return;}
     y[j] = a*sin(omega*t+phase);
   }
   *err = 0;
