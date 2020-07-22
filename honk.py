@@ -82,8 +82,10 @@ def main():
   # global_size is size of m-dim rectangular grid, one work item launched for each point
   # local_size is size of workgroup, must be an integer divisor of global_size
    
+  cl.enqueue_copy(queue, err, err_buf)
   cl.enqueue_copy(queue, y, y_buf)
    
+  print("return code=",err)
   print(y)
 
 main()

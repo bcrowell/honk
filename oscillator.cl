@@ -22,15 +22,6 @@ __kernel void oscillator(__global const int *fn,
 }
 #endif
 
-// benchmark using the Riemann zeta function
-void fn_zeta(__global FLOAT *y,int i) {
-  FLOAT z;
-  for (int j=0; j<10; j++) { // repeat the calculation a bunch of times just so it takes enough time to benchmark; 1000 gives about 10 seconds
-    z = zeta((FLOAT) (i*0.001+2));
-  }
-  y[i] = z;
-}
-
 void fn_osc(__global FLOAT *y,int i,
                          __global int *err, __global FLOAT *info,__global int *n_info,
                          __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4,
@@ -40,6 +31,7 @@ void fn_osc(__global FLOAT *y,int i,
                           v3,v4,i_pars[1],
                           f_pars[0],f_pars[1],f_pars[2],i,i,err
                          );
+  y[i] = i;
 }
 
 
@@ -89,6 +81,15 @@ FLOAT spline(__global const FLOAT *c,__global const FLOAT *knots,int n,int k,int
   }
   *err = 0;
   return s;
+}
+
+// benchmark using the Riemann zeta function
+void fn_zeta(__global FLOAT *y,int i) {
+  FLOAT z;
+  for (int j=0; j<10; j++) { // repeat the calculation a bunch of times just so it takes enough time to benchmark; 1000 gives about 10 seconds
+    z = zeta((FLOAT) (i*0.001+2));
+  }
+  y[i] = z;
 }
 
 /*
