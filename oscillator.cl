@@ -1,8 +1,11 @@
-#define FLOAT float
+#ifdef RUN_ON_CPU
+#include <math.h>
+#endif
 
-FLOAT zeta(FLOAT s);
-FLOAT spline(FLOAT *c,FLOAT *knots,int n,int k,int i,FLOAT x);
+#include "gpu.h"
+#include "honk.h"
 
+#ifndef RUN_ON_CPU
 __kernel void oscillator(__global FLOAT *y, __global const FLOAT *a) {
   // Get the index of the current element to be processed
   int i = get_global_id(0);
@@ -12,6 +15,7 @@ __kernel void oscillator(__global FLOAT *y, __global const FLOAT *a) {
   }
   y[i] = z;
 }
+#endif
 
 /*
   Evaluate a spline polynomial expressed as an array flattened from the format used by python's PPoly.
