@@ -33,7 +33,7 @@ def main():
    
   queue = cl.CommandQueue(context)
    
-  fn = numpy.uint32(1) # zeta function
+  fn = numpy.uint32(1) # cubic spline oscillator
   y = numpy.zeros(n, numpy.float32)
   err = numpy.zeros(1, numpy.int32)
   info = numpy.zeros(100, numpy.float32)
@@ -45,10 +45,23 @@ def main():
   i_pars = numpy.zeros(100, numpy.int64)
   f_pars = numpy.zeros(100, numpy.float32)
 
+  # knots
+  v2[0] = 0.0; v2[1] = 1.0;
+  v4[0] = 0.0; v4[1] = 1.0;
+  # constant spline polynomials
+  v1[3] = 1.0; v1[4] = 1.0; # constant omega=1
+  v3[3] = 1.0; v3[4] = 1.0; # constant amplitude=1
+  # scalar parameters:
+  i_pars[0] = 2; # n for omega spline
+  i_pars[1] = 2; # n for amplitude spline
+  f_pars[0] = 0.0; # phase
+  f_pars[1] = 0.0; # t0
+  f_pars[2] = 0.001; # dt
+
   mem_flags = cl.mem_flags
   fn_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=fn)
   y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
-  err_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=err)
+  err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=err)
   info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=info)
   n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=n_info)
   v1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v1)

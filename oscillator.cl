@@ -15,7 +15,9 @@ __kernel void oscillator(__global const int *fn,
                          __global const long *i_pars, __global const FLOAT *f_pars
                           ) {
   int i = get_global_id(0); // index of the current element in the computational grid
-  if (*fn==HONK_FN_ZETA) {fn_zeta(y,i); *err=0; return;}
+  *err = 0;
+  if (*fn==HONK_FN_ZETA) {fn_zeta(y,i); return;}
+  if (*fn==HONK_FN_OSC) {fn_osc(y,i,err,info,n_info,v1,v2,v3,v4,i_pars,f_pars); return;}
   *err = HONK_ERR_UNDEFINED_FN;
 }
 #endif
@@ -29,11 +31,23 @@ void fn_zeta(__global FLOAT *y,int i) {
   y[i] = z;
 }
 
-void oscillator_cubic_spline(FLOAT *y,
-                             FLOAT *omega_c,FLOAT *omega_knots,int omega_n,
-                             FLOAT *a_c,FLOAT *a_knots,int a_n,
-                             FLOAT phase,
-                             FLOAT t0,FLOAT dt,int j1,int j2,int *err) {
+void fn_osc(__global FLOAT *y,int i,
+                         __global int *err, __global FLOAT *info,__global int *n_info,
+                         __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4,
+                         __global const long *i_pars, __global const FLOAT *f_pars) {
+  oscillator_cubic_spline(y,
+                          v1,v2,i_pars[0],
+                          v3,v4,i_pars[1],
+                          f_pars[0],f_pars[1],f_pars[2],i,i,err
+                         );
+}
+
+
+void oscillator_cubic_spline(__global FLOAT *y,
+                             __global const FLOAT *omega_c,__global const FLOAT *omega_knots,int omega_n,
+                             __global const FLOAT *a_c,__global const FLOAT *a_knots,int a_n,
+                             FLOAT phase,FLOAT t0,FLOAT dt,int j1,int j2,
+                             __global int *err) {
   int omega_i = 0;
   int a_i = 0;
   FLOAT omega,a,t;
@@ -60,7 +74,7 @@ void oscillator_cubic_spline(FLOAT *y,
   On the first call, *i can be 0, and *i will then be updated automatically.
   Moving to the left past a knot results in an error unless the caller sets *i back to a lower value or 0.
 */
-FLOAT spline(FLOAT *c,FLOAT *knots,int n,int k,int *i,FLOAT x,int *err) {
+FLOAT spline(__global const FLOAT *c,__global const FLOAT *knots,int n,int k,int *i,FLOAT x,global int *err) {
   while (*i<=n-3 && x>knots[*i+1]) {(*i)++;}
   FLOAT d = x-knots[*i];
   if (d<0) {*err= -1; return 0.0;}
