@@ -18,9 +18,9 @@ void tests() {
 }
 
 #ifdef RUN_ON_CPU
-int main() {
+int main(void) {
   printf("Running tests...\n");
-  //tests();
+  tests();
   return 0;
 }
 #endif
