@@ -17,6 +17,25 @@ __kernel void oscillator(__global FLOAT *y, __global const FLOAT *a) {
 }
 #endif
 
+void oscillator_cubic_spline(FLOAT *y,
+                             FLOAT *omega_c,FLOAT *omega_knots,int omega_n,
+                             FLOAT *a_c,FLOAT *a_knots,int a_n,
+                             FLOAT phase,
+                             FLOAT t0,FLOAT dt,int j1,int j2,int *err) {
+  int omega_i = 0;
+  int a_i = 0;
+  FLOAT omega,a,t;
+  for (int j=j1; j<=j2; j++) {
+    t = t0 + dt*j;
+    omega = spline(omega_c,omega_knots,omega_n,3,&omega_i,t,err);
+    if (err) {return;}
+    a     = spline(a_c,    a_knots,    a_n,    3,&a_i,    t,err);
+    if (err) {return;}
+    y[j] = a*sin(omega*t+phase);
+  }
+  *err = 0;
+}
+
 /*
   Evaluate a spline polynomial expressed as an array flattened from the format used by python's PPoly.
   c[j] = flattened version of array c[m][i], with j=(n-1)m+i
