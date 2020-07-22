@@ -46,6 +46,7 @@ def main():
   f_pars = numpy.zeros(100, numpy.float32)
 
   mem_flags = cl.mem_flags
+  fn_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=fn)
   y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
   err_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=err)
   info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=info)
@@ -58,7 +59,7 @@ def main():
   f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=f_pars)
    
   program.oscillator(queue, (n,), (64,),
-                     fn, y_buf,
+                     fn_buf, y_buf,
                      err_buf,info_buf,n_info_buf,
                      v1_buf, v2_buf, v3_buf, v4_buf,
                      i_pars_buf,f_pars_buf)
