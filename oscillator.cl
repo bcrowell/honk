@@ -24,6 +24,17 @@ __kernel void oscillator(__global FLOAT *y, __global const FLOAT *a) {
 */
 FLOAT spline(FLOAT *c,FLOAT *knots,int n,int k,int i,FLOAT x) {
   while (i<=n-3 && x>knots[i+1]) {i++;}
+  FLOAT d = x-knots[i];
+  FLOAT p = 1.0; // (x-x_i)^k-m
+  int j = (n-1)*k+i;
+  FLOAT s = 0.0;
+  for (int m=k; ; m--) {
+    s = s + c[j]*p;
+    if (m==0) {break;}
+    p = p*d;
+    j -= (n-1);
+  }
+  return s;
 }
 
 /*
