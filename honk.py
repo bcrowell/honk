@@ -1,6 +1,6 @@
 #!/bin/python3
 
-import wave,time
+import wave,time,math
 import pyopencl as cl
 from pyopencl import array
 import numpy
@@ -23,7 +23,7 @@ def main():
   queue = cl.CommandQueue(context)
    
   n = 1024 # number of instances
-  samples_per_instance = 1000
+  samples_per_instance = 100
   n_samples = n*samples_per_instance
   sample_freq = 44100.0
 
@@ -88,15 +88,17 @@ def main():
   print("time = ",(timer_end-timer_start)*1000,"ms")
   print(y)
 
-  # convert to 16-bit signed for WAV or AIFF
-  pcm = numpy.zeros(n_samples, numpy.int16)
-  for i in range(n_samples):
-    pcm[i] = (1.0e4)*y[i]
-  f = wave.open('a.wav','w')
-  f.setnchannels(1) # mono
-  f.setsampwidth(2) # 16 bits
-  f.setframerate(sample_freq)
-  f.writeframesraw(pcm)
-  f.close()
+  if False:
+    # Write to a file.
+    # convert to 16-bit signed for WAV or AIFF
+    pcm = numpy.zeros(n_samples, numpy.int16)
+    for i in range(n_samples):
+      pcm[i] = (1.0e4)*y[i]
+    f = wave.open('a.wav','w')
+    f.setnchannels(1) # mono
+    f.setsampwidth(2) # 16 bits
+    f.setframerate(sample_freq)
+    f.writeframesraw(pcm)
+    f.close()
 
 main()
