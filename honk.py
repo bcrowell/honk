@@ -1,5 +1,6 @@
 #!/bin/python3
 
+import wave
 import pyopencl as cl
 from pyopencl import array
 import numpy
@@ -24,6 +25,7 @@ def main():
   n = 1024 # number of instances
   samples_per_instance = 50
   n_samples = n*samples_per_instance
+  sample_freq = 44100.0
 
   fn = numpy.uint32(1) # cubic spline oscillator
   y = numpy.zeros(n_samples, numpy.float32)
@@ -41,7 +43,7 @@ def main():
   v2[0] = 0.0; v2[1] = 1.0;
   v4[0] = 0.0; v4[1] = 1.0;
   # constant spline polynomials
-  v1[3] = 1.0; v1[4] = 1.0; # constant omega=1
+  v1[3] = 1000.0; v1[4] = 1000.0; # constant omega
   v3[3] = 1.0; v3[4] = 1.0; # constant amplitude=1
   # scalar parameters:
   i_pars[0] = 2; # n for omega spline
@@ -49,7 +51,7 @@ def main():
   i_pars[2] = samples_per_instance;
   f_pars[0] = 0.0; # phase
   f_pars[1] = 0.0; # t0
-  f_pars[2] = 0.001; # dt
+  f_pars[2] = 1/sample_freq; # dt
 
   mem_flags = cl.mem_flags
   fn_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=fn)
@@ -77,8 +79,20 @@ def main():
    
   cl.enqueue_copy(queue, err, err_buf)
   cl.enqueue_copy(queue, y, y_buf)
+
    
   print("return code=",err)
   print(y)
+
+  # convert to 16-bit signed for WAV or AIFF
+  pcm = numpy.zeros(n_samples, numpy.int16)
+  for i in range(n_samples):
+    pcm[i] = (1.0e4)*y[i]
+  f = wave.open('a.wav','w')
+  f.setnchannels(1) # mono
+  f.setsampwidth(2) # 16 bits
+  f.setframerate(sample_freq)
+  f.writeframesraw(pcm)
+  f.close()
 
 main()
