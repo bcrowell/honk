@@ -21,6 +21,12 @@ __kernel void oscillator(__global const int *fn,
 }
 #endif
 
+#define MAX_SPLINE_KNOTS 80
+#define SPLINE_ORDER 3
+#define MAX_SPLINE_COEFFS (MAX_SPLINE_KNOTS*(SPLINE_ORDER+1))
+// ... total number of cubic spline coefficients in all partials
+#define MAX_PARTIALS 16
+
 void fn_osc(__global FLOAT *y,int i,
                          __global int *err, __global FLOAT *info,__global int *n_info,
                          __global const FLOAT *v1, __global const FLOAT *v2,
@@ -29,9 +35,56 @@ void fn_osc(__global FLOAT *y,int i,
                          __global const long *i_pars, __global const FLOAT *f_pars) {
   int samples_per_instance = i_pars[0];
   int n_partials = i_pars[1];
+  // copy data to local memory for efficiency:
+  __local int omega_n[MAX_PARTIALS];
+  __local int a_n[MAX_PARTIALS];
+  __local FLOAT omega_knots[MAX_SPLINE_KNOTS];
+  __local FLOAT a_knots[MAX_SPLINE_KNOTS];
+  __local FLOAT omega_c_local[MAX_SPLINE_COEFFS];
+  __local FLOAT a_c_local[MAX_SPLINE_COEFFS];
+  // ---- copy number of knots
+  if (n_partials>MAX_PARTIALS) {*err=HONK_ERR_TOO_MANY_PARTIALS; return;}
+  for (int m=0; m<n_partials; m++) {
+    omega_n[m] = k1[m];
+    a_n[m]     = k2[m];
+  }
+  // ---- copy locations of knots
+  int k_omega = 0;
+  int k_a = 0;
+  for (int m=0; m<n_partials; m++) {
+    int this_omega_n = omega_n[m];
+    int this_a_n = a_n[m];
+    if (k_omega+this_omega_n>MAX_SPLINE_KNOTS || k_a+this_a_n>MAX_SPLINE_KNOTS) {*err=HONK_ERR_TOO_MANY_KNOTS_IN_SPLINE; return;}
+    for (int j=0; j<k_omega+this_omega_n; j++) {
+      omega_knots[k_omega+j] = v2[k_omega+j];
+    }
+    for (int j=0; j<k_omega+this_omega_n; j++) {
+      a_knots[k_a+j]         = v4[k_a+j];
+    }
+    k_omega += this_omega_n;
+    k_a     += this_a_n;
+  }
+  // ---- copy coefficients of cubic spline polynomials
+  k_omega = 0;
+  k_a = 0;
+  for (int m=0; m<n_partials; m++) {
+    int this_omega_n = omega_n[m];
+    int this_a_n = a_n[m];
+    int omega_size = (this_omega_n-1)*(SPLINE_ORDER+1); // n-1 because there are no coeffs associated with rightmost knot
+    int a_size =     (this_a_n-1)    *(SPLINE_ORDER+1);
+    if (k_omega+omega_size>MAX_SPLINE_COEFFS || k_a+a_size>MAX_SPLINE_COEFFS) {*err=HONK_ERR_SPLINE_TOO_LARGE; return;}
+    for (int j=0; j<k_omega+omega_size; j++) {
+      omega_c_local[k_omega+j] = v1[k_omega+j];
+    }
+    for (int j=0; j<k_a+a_size; j++) {
+      omega_c_local[k_a+j] = v3[k_a+j];
+    }
+    k_omega += omega_size;
+    k_a     += a_size;
+  }
   oscillator_cubic_spline(y,
-                          v1,v2,k1,
-                          v3,v4,k2,
+                          omega_c_local,omega_knots,omega_n,
+                          a_c_local    ,a_knots    ,a_n,
                           f_pars[0],f_pars[1],f_pars[2],i*samples_per_instance,(i+1)*samples_per_instance-1,n_partials,
                           err
                          );
@@ -39,24 +92,35 @@ void fn_osc(__global FLOAT *y,int i,
 
 
 void oscillator_cubic_spline(__global FLOAT *y,
-                             __global const FLOAT *omega_c,__global const FLOAT *omega_knots,__global const int *omega_n,
-                             __global const FLOAT *a_c,__global const FLOAT *a_knots,__global const int *a_n,
+                             __local FLOAT *omega_c,__local FLOAT *omega_knots,__local int *omega_n,
+                             __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
                              FLOAT phase,FLOAT t0,FLOAT dt,int j1,int j2,int n_partials,
                              __global int *err) {
-  int omega_i = 0;
-  int a_i = 0;
   FLOAT omega,a,t;
+  for (int j=j1; j<=j2; j++) {
+    y[j] = 0.0; // fixme -- inefficient
+  }
+  FLOAT *this_omega_c = omega_c;
+  FLOAT *this_a_c     = a_c;
+  int this_omega_knots = 0;
+  int this_a_knots = 0;
   for (int m=0; m<n_partials; m++) {
     int this_omega_n = omega_n[m];
     int this_a_n = a_n[m];
+    int omega_i = 0; // current knot number in spline for omega
+    int a_i = 0;     // ... similar
     for (int j=j1; j<=j2; j++) {
       t = t0 + dt*j;
-      omega = spline(omega_c,omega_knots,this_omega_n,3,&omega_i,t,err);
+      omega = spline(this_omega_c,this_omega_knots,this_omega_n,SPLINE_ORDER,&omega_i,t,err);
       if (*err) {return;}
-      a     = spline(a_c,    a_knots,    this_a_n,    3,&a_i,    t,err);
+      a     = spline(this_a_c,    this_a_knots,    this_a_n,    SPLINE_ORDER,&a_i,    t,err);
       if (*err) {return;}
-      y[j] = a*sin(omega*t+phase);
+      y[j] += a*sin(omega*t+phase);  // fixme -- add in local memory, copy at end
     }
+    this_omega_knots += this_omega_n;
+    this_a_knots     += this_a_n;
+    this_omega_c += (this_omega_n-1)*(SPLINE_ORDER+1); // n-1 because there are no coeffs associated with rightmost knot
+    this_a_c     += (this_a_n-1)    *(SPLINE_ORDER+1);
   }
   *err = 0;
 }
@@ -73,7 +137,7 @@ void oscillator_cubic_spline(__global FLOAT *y,
   On the first call, *i can be 0, and *i will then be updated automatically.
   Moving to the left past a knot results in an error unless the caller sets *i back to a lower value or 0.
 */
-FLOAT spline(__global const FLOAT *c,__global const FLOAT *knots,int n,int k,int *i,FLOAT x,__global int *err) {
+FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,__global int *err) {
   while (*i<=n-3 && x>knots[*i+1]) {(*i)++;}
   FLOAT d = x-knots[*i];
   if (d<0) {*err= -1; return 0.0;}
