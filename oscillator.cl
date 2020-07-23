@@ -100,8 +100,8 @@ void oscillator_cubic_spline(__global FLOAT *y,
   for (int j=j1; j<=j2; j++) {
     y[j] = 0.0; // fixme -- inefficient
   }
-  FLOAT *this_omega_c = omega_c;
-  FLOAT *this_a_c     = a_c;
+  __local FLOAT *this_omega_c = omega_c;
+  __local FLOAT *this_a_c     = a_c;
   int this_omega_knots = 0;
   int this_a_knots = 0;
   for (int m=0; m<n_partials; m++) {
