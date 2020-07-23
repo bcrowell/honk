@@ -43,7 +43,7 @@ def main():
   v2[0] = 0.0; v2[1] = 1.0;
   v4[0] = 0.0; v4[1] = 1.0;
   # constant spline polynomials
-  v1[3] = 1000.0; v1[4] = 1000.0; # constant omega
+  v1[3] = 1000.0*2*math.pi; v1[4] = 1000.0*2*math.pi; # constant omega
   v3[3] = 1.0; v3[4] = 1.0; # constant amplitude=1
   # scalar parameters:
   i_pars[0] = 2; # n for omega spline

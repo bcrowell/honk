@@ -15,10 +15,40 @@
 void do_one_test(FLOAT expected,FLOAT actual,char *description,int *err);
 void test_spline_1();
 void test_spline_2();
+void benchmark();
 
 void tests() {
   test_spline_1();
   test_spline_2();
+  // benchmark();
+}
+
+#define N_BENCHMARK 1024000
+void benchmark() {
+  FLOAT y[N_BENCHMARK];
+  int i=0;
+  int err;
+  FLOAT info[10];
+  int n_info[10];
+  FLOAT v1[10],v2[10],v3[10],v4[10];
+  long i_pars[10];
+  FLOAT f_pars[10];
+  FLOAT sample_freq = 44100.0;
+  v2[0] = 0.0; v2[1] = 1.0;
+  v4[0] = 0.0; v4[1] = 1.0;
+  // constant spline polynomials
+  v1[3] = 1000.0*2*3.141; v1[4] = v1[3]; // constant omega
+  v3[3] = 1.0; v3[4] = 1.0; // constant amplitude=1
+  // scalar parameters:
+  i_pars[0] = 2; // n for omega spline
+  i_pars[1] = 2; // n for amplitude spline
+  i_pars[2] = N_BENCHMARK; // samples per instance, on CPU
+  f_pars[0] = 0.0; // phase
+  f_pars[1] = 0.0; // t0
+  f_pars[2] = 1/sample_freq; // dt
+  for (int j=1; j<=100; j++) { // repeat for benchmark
+    fn_osc(y,i,&err,info,n_info,v1,v2,v3,v4,i_pars,f_pars);
+  }
 }
 
 void test_spline_1() {
