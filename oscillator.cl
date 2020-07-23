@@ -6,8 +6,6 @@
 #include "honk.h"
 
 #ifndef RUN_ON_CPU
-///////////////  __kernel void oscillator(__global FLOAT *y, __global const FLOAT *a) {
-
 __kernel void oscillator(__global const int *fn,
                          __global FLOAT *y,
                          __global int *err, __global FLOAT *info,__global int *n_info,
@@ -26,10 +24,11 @@ void fn_osc(__global FLOAT *y,int i,
                          __global int *err, __global FLOAT *info,__global int *n_info,
                          __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4,
                          __global const long *i_pars, __global const FLOAT *f_pars) {
+  int samples_per_instance = i_pars[2];
   oscillator_cubic_spline(y,
                           v1,v2,i_pars[0],
                           v3,v4,i_pars[1],
-                          f_pars[0],f_pars[1],f_pars[2],i,i,err
+                          f_pars[0],f_pars[1],f_pars[2],i*samples_per_instance,(i+1)*samples_per_instance-1,err
                          );
 }
 

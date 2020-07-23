@@ -7,21 +7,9 @@ import numpy
 # based on code from   https://www.drdobbs.com/open-source/easy-opencl-with-python/240162614
  
 def main():
-  n = 1024
-  a = numpy.zeros(n, numpy.float32)
-   
   print("number of platforms = ",len(cl.get_platforms()))
-
   platform = cl.get_platforms()[0]
-   
-  ## It would be necessary to add some code to check the check the support for
-  ## the necessary platform extensions with platform.extensions
-   
   device = platform.get_devices()[0]
-   
-  ## It would be necessary to add some code to check the check the support for
-  ## the necessary device extensions with device.extensions
-   
   context = cl.Context([device])
    
   with open('oscillator.cl', 'r') as f:
@@ -33,8 +21,12 @@ def main():
    
   queue = cl.CommandQueue(context)
    
+  n = 1024 # number of instances
+  samples_per_instance = 50
+  n_samples = n*samples_per_instance
+
   fn = numpy.uint32(1) # cubic spline oscillator
-  y = numpy.zeros(n, numpy.float32)
+  y = numpy.zeros(n_samples, numpy.float32)
   err = numpy.zeros(1, numpy.int32)
   info = numpy.zeros(100, numpy.float32)
   n_info = numpy.zeros(1, numpy.int32)
@@ -54,6 +46,7 @@ def main():
   # scalar parameters:
   i_pars[0] = 2; # n for omega spline
   i_pars[1] = 2; # n for amplitude spline
+  i_pars[2] = samples_per_instance;
   f_pars[0] = 0.0; # phase
   f_pars[1] = 0.0; # t0
   f_pars[2] = 0.001; # dt
