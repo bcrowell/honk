@@ -23,9 +23,10 @@ def main():
   queue = cl.CommandQueue(context)
    
   n = 1024 # number of instances
-  samples_per_instance = 100
-  n_samples = n*samples_per_instance
   sample_freq = 44100.0
+  length_sec = 1.0
+  samples_per_instance = int(length_sec*sample_freq/n)
+  n_samples = n*samples_per_instance
 
   fn = numpy.uint32(1) # cubic spline oscillator
   y = numpy.zeros(n_samples, numpy.float32)
@@ -36,6 +37,8 @@ def main():
   v2 = numpy.zeros(100, numpy.float32)
   v3 = numpy.zeros(100, numpy.float32)
   v4 = numpy.zeros(100, numpy.float32)
+  k1 = numpy.zeros(100, numpy.int32)
+  k2 = numpy.zeros(100, numpy.int32)
   i_pars = numpy.zeros(100, numpy.int64)
   f_pars = numpy.zeros(100, numpy.float32)
 
@@ -46,9 +49,9 @@ def main():
   v1[3] = 1000.0*2*math.pi; v1[4] = 1000.0*2*math.pi; # constant omega
   v3[3] = 1.0; v3[4] = 1.0; # constant amplitude=1
   # scalar parameters:
-  i_pars[0] = 2; # n for omega spline
-  i_pars[1] = 2; # n for amplitude spline
-  i_pars[2] = samples_per_instance;
+  k1[0] = 2; # n for omega spline
+  k2[0] = 2; # n for amplitude spline
+  i_pars[0] = samples_per_instance;
   f_pars[0] = 0.0; # phase
   f_pars[1] = 0.0; # t0
   f_pars[2] = 1/sample_freq; # dt
@@ -65,13 +68,15 @@ def main():
   v2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v2)
   v3_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v3)
   v4_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v4)
+  k1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k1)
+  k2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k2)
   i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=i_pars)
   f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=f_pars)
    
   program.oscillator(queue, (n,), (64,),
                      fn_buf, y_buf,
                      err_buf,info_buf,n_info_buf,
-                     v1_buf, v2_buf, v3_buf, v4_buf,
+                     v1_buf, v2_buf, v3_buf, v4_buf, k1_buf, k2_buf,
                      i_pars_buf,f_pars_buf)
   # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
   # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html
@@ -88,7 +93,7 @@ def main():
   print("time = ",(timer_end-timer_start)*1000,"ms")
   print(y)
 
-  if False:
+  if True:
     # Write to a file.
     # convert to 16-bit signed for WAV or AIFF
     pcm = numpy.zeros(n_samples, numpy.int16)

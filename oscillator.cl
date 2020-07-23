@@ -10,24 +10,27 @@ __kernel void oscillator(__global const int *fn,
                          __global FLOAT *y,
                          __global int *err, __global FLOAT *info,__global int *n_info,
                          __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4,
+                         __global const int *k1,  __global const int *k2,
                          __global const long *i_pars, __global const FLOAT *f_pars
                           ) {
   int i = get_global_id(0); // index of the current element in the computational grid
   *err = 0;
   if (*fn==HONK_FN_ZETA) {fn_zeta(y,i); return;}
-  if (*fn==HONK_FN_OSC) {fn_osc(y,i,err,info,n_info,v1,v2,v3,v4,i_pars,f_pars); return;}
+  if (*fn==HONK_FN_OSC) {fn_osc(y,i,err,info,n_info,v1,v2,v3,v4,k1,k2,i_pars,f_pars); return;}
   *err = HONK_ERR_UNDEFINED_FN;
 }
 #endif
 
 void fn_osc(__global FLOAT *y,int i,
                          __global int *err, __global FLOAT *info,__global int *n_info,
-                         __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4,
+                         __global const FLOAT *v1, __global const FLOAT *v2,
+                         __global const FLOAT *v3, __global const FLOAT *v4,
+                         __global const int *k1,  __global const int *k2,
                          __global const long *i_pars, __global const FLOAT *f_pars) {
-  int samples_per_instance = i_pars[2];
+  int samples_per_instance = i_pars[0];
   oscillator_cubic_spline(y,
-                          v1,v2,i_pars[0],
-                          v3,v4,i_pars[1],
+                          v1,v2,k1[0],
+                          v3,v4,k2[0],
                           f_pars[0],f_pars[1],f_pars[2],i*samples_per_instance,(i+1)*samples_per_instance-1,err
                          );
 }
