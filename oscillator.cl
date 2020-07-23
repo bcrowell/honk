@@ -82,7 +82,6 @@ void fn_osc(__global FLOAT *y,int i,
     k_omega += omega_size;
     k_a     += a_size;
   }
-  if (fabs(a_c_local[3]-1.0)>0.001) {*err=10; return;} // qwe
   oscillator_cubic_spline(y,
                           omega_c_local,omega_knots,omega_n,
                           a_c_local,    a_knots    ,a_n,
@@ -97,12 +96,6 @@ void oscillator_cubic_spline(__global FLOAT *y,
                              __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
                              FLOAT phase,FLOAT t0,FLOAT dt,int j1,int j2,int n_partials,
                              __global int *err) {
-
-  if (fabs(a_c[0]-0.0)>0.001) {*err=11; return;} // qwe
-  if (fabs(a_c[1]-0.0)>0.001) {*err=12; return;} // qwe
-  if (fabs(a_c[2]-0.0)>0.001) {*err=13; return;} // qwe
-  if (fabs(a_c[3]-1.0)>0.001) {*err=14; return;} // qwe
-
   FLOAT omega,a,t;
   for (int j=j1; j<=j2; j++) {
     y[j] = 0.0; // fixme -- inefficient
@@ -123,11 +116,6 @@ void oscillator_cubic_spline(__global FLOAT *y,
       if (local_err) {*err=local_err; return;}
       a     = spline(this_a_c,    this_a_knots,    this_a_n,    SPLINE_ORDER,&a_i,    t,&local_err);
       if (local_err) {*err=local_err; return;}
-
-      if (fabs(this_a_c[3]-1.0)>0.001) {*err=9; return;} // qwe
-      if (fabs(a-1.0)>0.001) {*err=7; return;} // qwe
-      if (fabs(omega-1000.0*2*3.14159)>1.0) {*err=8; return;} // qwe
-
       y[j] += a*sin(omega*t+phase);  // fixme -- add in local memory, copy at end
     }
     this_omega_knots += this_omega_n;
