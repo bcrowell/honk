@@ -52,6 +52,7 @@ def main():
   k1[0] = 2; # n for omega spline
   k2[0] = 2; # n for amplitude spline
   i_pars[0] = samples_per_instance;
+  i_pars[1] = 1; # number of partials
   f_pars[0] = 0.0; # phase
   f_pars[1] = 0.0; # t0
   f_pars[2] = 1/sample_freq; # dt

@@ -5,9 +5,9 @@ void fn_osc(__global FLOAT *y,int i,
                          __global const int *k1,  __global const int *k2,
                          __global const long *i_pars, __global const FLOAT *f_pars);
 void oscillator_cubic_spline(__global FLOAT *y,
-                             __global const FLOAT *omega_c,__global const FLOAT *omega_knots,int omega_n,
-                             __global const FLOAT *a_c,__global const FLOAT *a_knots,int a_n,
-                             FLOAT phase,FLOAT t0,FLOAT dt,int j1,int j2,
+                             __global const FLOAT *omega_c,__global const FLOAT *omega_knots,__global const int *omega_n,
+                             __global const FLOAT *a_c,__global const FLOAT *a_knots,__global const int *a_n,
+                             FLOAT phase,FLOAT t0,FLOAT dt,int j1,int j2,int n_partials,
                              __global int *err);
 void fn_zeta(__global FLOAT *y,int i);
 FLOAT zeta(FLOAT s);

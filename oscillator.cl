@@ -28,29 +28,35 @@ void fn_osc(__global FLOAT *y,int i,
                          __global const int *k1,  __global const int *k2,
                          __global const long *i_pars, __global const FLOAT *f_pars) {
   int samples_per_instance = i_pars[0];
+  int n_partials = i_pars[1];
   oscillator_cubic_spline(y,
-                          v1,v2,k1[0],
-                          v3,v4,k2[0],
-                          f_pars[0],f_pars[1],f_pars[2],i*samples_per_instance,(i+1)*samples_per_instance-1,err
+                          v1,v2,k1,
+                          v3,v4,k2,
+                          f_pars[0],f_pars[1],f_pars[2],i*samples_per_instance,(i+1)*samples_per_instance-1,n_partials,
+                          err
                          );
 }
 
 
 void oscillator_cubic_spline(__global FLOAT *y,
-                             __global const FLOAT *omega_c,__global const FLOAT *omega_knots,int omega_n,
-                             __global const FLOAT *a_c,__global const FLOAT *a_knots,int a_n,
-                             FLOAT phase,FLOAT t0,FLOAT dt,int j1,int j2,
+                             __global const FLOAT *omega_c,__global const FLOAT *omega_knots,__global const int *omega_n,
+                             __global const FLOAT *a_c,__global const FLOAT *a_knots,__global const int *a_n,
+                             FLOAT phase,FLOAT t0,FLOAT dt,int j1,int j2,int n_partials,
                              __global int *err) {
   int omega_i = 0;
   int a_i = 0;
   FLOAT omega,a,t;
-  for (int j=j1; j<=j2; j++) {
-    t = t0 + dt*j;
-    omega = spline(omega_c,omega_knots,omega_n,3,&omega_i,t,err);
-    if (*err) {return;}
-    a     = spline(a_c,    a_knots,    a_n,    3,&a_i,    t,err);
-    if (*err) {return;}
-    y[j] = a*sin(omega*t+phase);
+  for (int m=0; m<n_partials; m++) {
+    int this_omega_n = omega_n[m];
+    int this_a_n = a_n[m];
+    for (int j=j1; j<=j2; j++) {
+      t = t0 + dt*j;
+      omega = spline(omega_c,omega_knots,this_omega_n,3,&omega_i,t,err);
+      if (*err) {return;}
+      a     = spline(a_c,    a_knots,    this_a_n,    3,&a_i,    t,err);
+      if (*err) {return;}
+      y[j] = a*sin(omega*t+phase);
+    }
   }
   *err = 0;
 }
