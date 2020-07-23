@@ -1,6 +1,6 @@
 #!/bin/python3
 
-import wave
+import wave,time
 import pyopencl as cl
 from pyopencl import array
 import numpy
@@ -23,7 +23,7 @@ def main():
   queue = cl.CommandQueue(context)
    
   n = 1024 # number of instances
-  samples_per_instance = 50
+  samples_per_instance = 1000
   n_samples = n*samples_per_instance
   sample_freq = 44100.0
 
@@ -53,6 +53,8 @@ def main():
   f_pars[1] = 0.0; # t0
   f_pars[2] = 1/sample_freq; # dt
 
+  timer_start = time.perf_counter()
+
   mem_flags = cl.mem_flags
   fn_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=fn)
   y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
@@ -80,8 +82,10 @@ def main():
   cl.enqueue_copy(queue, err, err_buf)
   cl.enqueue_copy(queue, y, y_buf)
 
+  timer_end = time.perf_counter()
    
   print("return code=",err)
+  print("time = ",(timer_end-timer_start)*1000,"ms")
   print(y)
 
   # convert to 16-bit signed for WAV or AIFF

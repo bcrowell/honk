@@ -64,7 +64,7 @@ void oscillator_cubic_spline(__global FLOAT *y,
   On the first call, *i can be 0, and *i will then be updated automatically.
   Moving to the left past a knot results in an error unless the caller sets *i back to a lower value or 0.
 */
-FLOAT spline(__global const FLOAT *c,__global const FLOAT *knots,int n,int k,int *i,FLOAT x,global int *err) {
+FLOAT spline(__global const FLOAT *c,__global const FLOAT *knots,int n,int k,int *i,FLOAT x,__global int *err) {
   while (*i<=n-3 && x>knots[*i+1]) {(*i)++;}
   FLOAT d = x-knots[*i];
   if (d<0) {*err= -1; return 0.0;}
