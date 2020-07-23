@@ -94,12 +94,18 @@ def main():
   print("time = ",(timer_end-timer_start)*1000,"ms")
   print(y)
 
+  max_abs = 0.0
+  for i in range(n_samples):
+    if abs(y[i]>max_abs):
+      max_abs = y[i]
+
   if True:
     # Write to a file.
     # convert to 16-bit signed for WAV or AIFF
+    gain = 32760.0/max_abs
     pcm = numpy.zeros(n_samples, numpy.int16)
     for i in range(n_samples):
-      pcm[i] = (1.0e4)*y[i]
+      pcm[i] = gain*y[i]
     f = wave.open('a.wav','w')
     f.setnchannels(1) # mono
     f.setsampwidth(2) # 16 bits
@@ -108,3 +114,4 @@ def main():
     f.close()
 
 main()
+
