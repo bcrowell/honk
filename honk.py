@@ -1,6 +1,6 @@
 #!/bin/python3
 
-import wave,time,math
+import wave,time,math,sys
 import pyopencl as cl
 from pyopencl import array
 import numpy
@@ -45,7 +45,7 @@ def main():
   # knots
   v2[0] = 0.0; v2[1] = 1.0;
   v4[0] = 0.0; v4[1] = 1.0;
-  # constant spline polynomials
+  # constant spline polynomials: [3] is the constant coefficient
   v1[3] = 1000.0*2*math.pi; v1[4] = 1000.0*2*math.pi; # constant omega
   v3[3] = 1.0; v3[4] = 1.0; # constant amplitude=1
   # scalar parameters:
@@ -91,6 +91,8 @@ def main():
   timer_end = time.perf_counter()
    
   print("return code=",err)
+  if err!=0:
+    sys.exit(" ******* exiting with an error **********")
   print("time = ",(timer_end-timer_start)*1000,"ms")
   print(y)
 
