@@ -1,4 +1,4 @@
-FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,__global int *err);
+FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,__local int *err);
 void fn_osc(__global FLOAT *y,int i,
                          __global int *err, __global FLOAT *info,__global int *n_info,
                          __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4,

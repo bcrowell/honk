@@ -102,8 +102,9 @@ void oscillator_cubic_spline(__global FLOAT *y,
   }
   __local FLOAT *this_omega_c = omega_c;
   __local FLOAT *this_a_c     = a_c;
-  int this_omega_knots = 0;
-  int this_a_knots = 0;
+  __local FLOAT *this_omega_knots = omega_knots;
+  __local FLOAT *this_a_knots = a_knots;
+  __local int local_err; // for efficiency, avoid accessing the global err
   for (int m=0; m<n_partials; m++) {
     int this_omega_n = omega_n[m];
     int this_a_n = a_n[m];
@@ -111,10 +112,12 @@ void oscillator_cubic_spline(__global FLOAT *y,
     int a_i = 0;     // ... similar
     for (int j=j1; j<=j2; j++) {
       t = t0 + dt*j;
-      omega = spline(this_omega_c,this_omega_knots,this_omega_n,SPLINE_ORDER,&omega_i,t,err);
-      if (*err) {return;}
-      a     = spline(this_a_c,    this_a_knots,    this_a_n,    SPLINE_ORDER,&a_i,    t,err);
-      if (*err) {return;}
+      omega = spline(this_omega_c,this_omega_knots,this_omega_n,SPLINE_ORDER,&omega_i,t,&local_err);
+      if (local_err) {*err=local_err; return;}
+      a     = spline(this_a_c,    this_a_knots,    this_a_n,    SPLINE_ORDER,&a_i,    t,&local_err);
+      if (local_err) {*err=local_err; return;}
+      // qwe -------
+         omega=1000.0; a=1.0;
       y[j] += a*sin(omega*t+phase);  // fixme -- add in local memory, copy at end
     }
     this_omega_knots += this_omega_n;
@@ -137,7 +140,7 @@ void oscillator_cubic_spline(__global FLOAT *y,
   On the first call, *i can be 0, and *i will then be updated automatically.
   Moving to the left past a knot results in an error unless the caller sets *i back to a lower value or 0.
 */
-FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,__global int *err) {
+FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,__local int *err) {
   while (*i<=n-3 && x>knots[*i+1]) {(*i)++;}
   FLOAT d = x-knots[*i];
   if (d<0) {*err= -1; return 0.0;}
