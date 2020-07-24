@@ -27,28 +27,28 @@ def main():
   err = numpy.zeros(1, numpy.int32)
   info = numpy.zeros(100, numpy.float32)
   n_info = numpy.zeros(1, numpy.int32)
-  v1 = numpy.zeros(max_spline_coeffs, numpy.float32)
-  v2 = numpy.zeros(max_spline_knots, numpy.float32)
-  v3 = numpy.zeros(max_spline_coeffs, numpy.float32)
-  v4 = numpy.zeros(max_spline_knots, numpy.float32)
-  v5 = numpy.zeros(max_partials, numpy.float32)
+  omega_c = numpy.zeros(max_spline_coeffs, numpy.float32)
+  omega_knots = numpy.zeros(max_spline_knots, numpy.float32)
+  a_c = numpy.zeros(max_spline_coeffs, numpy.float32)
+  a_knots = numpy.zeros(max_spline_knots, numpy.float32)
+  phase = numpy.zeros(max_partials, numpy.float32)
   k1 = numpy.zeros(max_partials, numpy.int32)
   k2 = numpy.zeros(max_partials, numpy.int32)
   i_pars = numpy.zeros(100, numpy.int64)
   f_pars = numpy.zeros(100, numpy.float32)
 
   # knots
-  v2[0] = 0.0; v2[1] = 1.0;
-  v4[0] = 0.0; v4[1] = 1.0;
+  omega_knots[0] = 0.0; omega_knots[1] = 1.0;
+  a_knots[0] = 0.0; a_knots[1] = 1.0;
   # second partial:
-  v2[2] = 0.0; v2[3] = 1.0;
-  v4[2] = 0.0; v4[3] = 1.0;
+  omega_knots[2] = 0.0; omega_knots[3] = 1.0;
+  a_knots[2] = 0.0; a_knots[3] = 1.0;
   # constant spline polynomials: [3] is the constant coefficient
-  v1[3] = 1000.0*2*math.pi;  # constant omega
-  v3[3] = 1.0; # constant amplitude=1
+  omega_c[3] = 1000.0*2*math.pi;  # constant omega
+  a_c[3] = 1.0; # constant amplitude=1
   # second partial:
-  v1[7] = 2000.0*2*math.pi;  # constant omega
-  v3[7] = 0.5; # constant amplitude=1
+  omega_c[7] = 2000.0*2*math.pi;  # constant omega
+  a_c[7] = 0.5; # constant amplitude=1
   # scalar parameters:
   k1[0] = 2; # n for omega spline
   k2[0] = 2; # n for amplitude spline
@@ -58,13 +58,13 @@ def main():
   i_pars[0] = samples_per_instance;
   i_pars[1] = 2; # number of partials
   # phases
-  v5[0] = 0.0;
-  v5[1] = 0.0;
+  phase[0] = 0.0;
+  phase[1] = 0.0;
   f_pars[0] = 0.0; # t0
   f_pars[1] = 1/sample_freq; # dt
 
   timer_start = time.perf_counter()
-  do_oscillator(y,dev,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars)
+  do_oscillator(y,dev,n_instances,err,info,n_info,omega_c,omega_knots,a_c,a_knots,phase,k1,k2,i_pars,f_pars)
   timer_end = time.perf_counter()
    
   print("return code=",err)
@@ -96,7 +96,7 @@ def write_file(filename,y,n_samples,sample_freq):
   f.writeframesraw(pcm)
   f.close()
 
-def do_oscillator(y,dev,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars):
+def do_oscillator(y,dev,n_instances,err,info,n_info,omega_c,omega_knots,a_c,a_knots,phase,k1,k2,i_pars,f_pars):
   mem_flags = cl.mem_flags
   context = dev.context
   program = dev.program
@@ -105,11 +105,11 @@ def do_oscillator(y,dev,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,
   err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=err)
   info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=info)
   n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=n_info)
-  v1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v1)
-  v2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v2)
-  v3_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v3)
-  v4_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v4)
-  v5_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v5)
+  omega_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=omega_c)
+  omega_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=omega_knots)
+  a_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=a_c)
+  a_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=a_knots)
+  phase_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=phase)
   k1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k1)
   k2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k2)
   i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=i_pars)
@@ -118,7 +118,7 @@ def do_oscillator(y,dev,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,
   program.oscillator(queue, (n_instances,), (64,),
                      y_buf,
                      err_buf,info_buf,n_info_buf,
-                     v1_buf, v2_buf, v3_buf, v4_buf, v5_buf, k1_buf, k2_buf,
+                     omega_c_buf, omega_knots_buf, a_c_buf, a_knots_buf, phase_buf, k1_buf, k2_buf,
                      i_pars_buf,f_pars_buf)
   # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
   # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html
