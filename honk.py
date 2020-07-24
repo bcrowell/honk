@@ -1,6 +1,6 @@
 #!/bin/python3
 
-import wave,time,math,sys
+import wave,time,math,sys,ctypes
 import pyopencl as cl
 from pyopencl import array
 import numpy
@@ -8,6 +8,10 @@ import numpy
 # based on code from   https://www.drdobbs.com/open-source/easy-opencl-with-python/240162614
  
 def main():
+  cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
+  max_spline_knots,spline_order,max_spline_coeffs,max_partials = (cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),
+                                                                  cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3))
+
   print("number of platforms = ",len(cl.get_platforms()))
   platform = cl.get_platforms()[0]
   device = platform.get_devices()[0]
@@ -33,13 +37,13 @@ def main():
   err = numpy.zeros(1, numpy.int32)
   info = numpy.zeros(100, numpy.float32)
   n_info = numpy.zeros(1, numpy.int32)
-  v1 = numpy.zeros(100, numpy.float32)
-  v2 = numpy.zeros(100, numpy.float32)
-  v3 = numpy.zeros(100, numpy.float32)
-  v4 = numpy.zeros(100, numpy.float32)
-  v5 = numpy.zeros(100, numpy.float32)
-  k1 = numpy.zeros(100, numpy.int32)
-  k2 = numpy.zeros(100, numpy.int32)
+  v1 = numpy.zeros(max_spline_coeffs, numpy.float32)
+  v2 = numpy.zeros(max_spline_knots, numpy.float32)
+  v3 = numpy.zeros(max_spline_coeffs, numpy.float32)
+  v4 = numpy.zeros(max_spline_knots, numpy.float32)
+  v5 = numpy.zeros(max_partials, numpy.float32)
+  k1 = numpy.zeros(max_partials, numpy.int32)
+  k2 = numpy.zeros(max_partials, numpy.int32)
   i_pars = numpy.zeros(100, numpy.int64)
   f_pars = numpy.zeros(100, numpy.float32)
 

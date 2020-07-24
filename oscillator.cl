@@ -4,6 +4,7 @@
 
 #include "gpu.h"
 #include "honk.h"
+#include "constants.h"
 
 #ifndef RUN_ON_CPU
 __kernel void oscillator(__global const int *fn,
@@ -20,12 +21,6 @@ __kernel void oscillator(__global const int *fn,
   *err = HONK_ERR_UNDEFINED_FN;
 }
 #endif
-
-#define MAX_SPLINE_KNOTS 80
-#define SPLINE_ORDER 3
-#define MAX_SPLINE_COEFFS (MAX_SPLINE_KNOTS*(SPLINE_ORDER+1))
-// ... total number of cubic spline coefficients in all partials
-#define MAX_PARTIALS 16
 
 void fn_osc(__global FLOAT *y,int i,
                          __global int *err, __global FLOAT *info,__global int *n_info,

@@ -13,10 +13,3 @@ void oscillator_cubic_spline(__global FLOAT *y,
 void fn_zeta(__global FLOAT *y,int i);
 FLOAT zeta(FLOAT s);
 
-#define HONK_FN_OSC 1
-#define HONK_FN_ZETA 2
-
-#define HONK_ERR_UNDEFINED_FN 1
-#define HONK_ERR_SPLINE_TOO_LARGE 2
-#define HONK_ERR_TOO_MANY_PARTIALS 3
-#define HONK_ERR_TOO_MANY_KNOTS_IN_SPLINE 4
