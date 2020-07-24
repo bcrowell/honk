@@ -33,36 +33,9 @@ def main():
 
   osc.setup([p1,p2])
 
-  print(osc)
-
-  # knots
-  osc.omega_knots[0] = 0.0; osc.omega_knots[1] = 1.0;
-  osc.a_knots[0] = 0.0; osc.a_knots[1] = 1.0;
-  # second partial:
-  osc.omega_knots[2] = 0.0; osc.omega_knots[3] = 1.0;
-  osc.a_knots[2] = 0.0; osc.a_knots[3] = 1.0;
-  # constant spline polynomials: [3] is the constant coefficient
-  osc.omega_c[3] = 1000.0*2*math.pi;  # constant omega
-  osc.a_c[3] = 1.0; # constant amplitude=1
-  # second partial:
-  osc.omega_c[7] = 2000.0*2*math.pi;  # constant omega
-  osc.a_c[7] = 0.5; # constant amplitude=1
-  # scalar parameters:
-  osc.omega_n[0] = 2; # n for omega spline
-  osc.a_n[0] = 2; # n for amplitude spline
-  # second partial:
-  osc.omega_n[1] = 2; # n for omega spline
-  osc.a_n[1] = 2; # n for amplitude spline
   osc.i_pars[0] = samples_per_instance;
-  osc.i_pars[1] = 2; # number of partials
-  # phases
-  osc.phase[0] = 0.0;
-  osc.phase[1] = 0.0;
   osc.f_pars[0] = 0.0; # t0
   osc.f_pars[1] = 1/sample_freq; # dt
-
-  print(osc)
-
 
   timer_start = time.perf_counter()
   do_oscillator(osc.y,dev,n_instances,

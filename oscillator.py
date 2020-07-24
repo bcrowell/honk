@@ -42,6 +42,11 @@ class Oscillator:
     copy_into_numpy_array(self.phase,         [p.phase for p in partials] )
     copy_into_numpy_array(self.omega_c,       functools.reduce(cat,list(map(lambda p:cubic_spline_coeffs(p.omega_times,p.omega_values),partials))) )
     copy_into_numpy_array(self.a_c,           functools.reduce(cat,list(map(lambda p:cubic_spline_coeffs(p.a_times,p.a_values),partials))) )
+    for i in range(len(partials)):
+      p = partials[i]
+      self.omega_n[i] = len(p.omega_times)
+      self.a_n[i] = len(p.a_times)
+    self.i_pars[1] = len(partials)
 
   def __str__(self):
     return str(self.omega_c)
