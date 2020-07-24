@@ -101,8 +101,6 @@ def do_oscillator(y,dev,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,
   context = dev.context
   program = dev.program
   queue = dev.queue
-  fn = numpy.uint32(1) # cubic spline oscillator
-  fn_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=fn)
   y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
   err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=err)
   info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=info)
@@ -118,7 +116,7 @@ def do_oscillator(y,dev,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,
   f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=f_pars)
    
   program.oscillator(queue, (n_instances,), (64,),
-                     fn_buf, y_buf,
+                     y_buf,
                      err_buf,info_buf,n_info_buf,
                      v1_buf, v2_buf, v3_buf, v4_buf, v5_buf, k1_buf, k2_buf,
                      i_pars_buf,f_pars_buf)

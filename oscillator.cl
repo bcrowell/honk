@@ -7,8 +7,7 @@
 #include "constants.h"
 
 #ifndef RUN_ON_CPU
-__kernel void oscillator(__global const int *fn,
-                         __global FLOAT *y,
+__kernel void oscillator(__global FLOAT *y,
                          __global int *err, __global FLOAT *info,__global int *n_info,
                          __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4, __global const FLOAT *v5,
                          __global const int *k1,  __global const int *k2,
@@ -16,10 +15,9 @@ __kernel void oscillator(__global const int *fn,
                           ) {
   int i = get_global_id(0); // index of the current element in the computational grid
   *err = 0;
-  if (*fn==HONK_FN_ZETA) {fn_zeta(y,i); return;}
-  if (*fn==HONK_FN_OSC) {fn_osc(y,i,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars); return;}
-  *err = HONK_ERR_UNDEFINED_FN;
+  fn_osc(y,i,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars);
 }
+
 #endif
 
 void fn_osc(__global FLOAT *y,int i,

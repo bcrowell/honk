@@ -1,5 +1,5 @@
 /*
-  Allow code to run on the normal CPU rather than the GPU, for testing.
+  Allow code to run either on the GPU or on the normal CPU, for testing.
 */
 #ifdef RUN_ON_CPU
 #define __kernel
