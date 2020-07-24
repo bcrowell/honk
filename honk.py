@@ -37,6 +37,7 @@ def main():
   v2 = numpy.zeros(100, numpy.float32)
   v3 = numpy.zeros(100, numpy.float32)
   v4 = numpy.zeros(100, numpy.float32)
+  v5 = numpy.zeros(100, numpy.float32)
   k1 = numpy.zeros(100, numpy.int32)
   k2 = numpy.zeros(100, numpy.int32)
   i_pars = numpy.zeros(100, numpy.int64)
@@ -62,9 +63,11 @@ def main():
   k2[1] = 2; # n for amplitude spline
   i_pars[0] = samples_per_instance;
   i_pars[1] = 2; # number of partials
-  f_pars[0] = 0.0; # phase -- fixme, needs to be different for each partial
-  f_pars[1] = 0.0; # t0
-  f_pars[2] = 1/sample_freq; # dt
+  # phases
+  v5[0] = 0.0;
+  v5[1] = 0.0;
+  f_pars[0] = 0.0; # t0
+  f_pars[1] = 1/sample_freq; # dt
 
   timer_start = time.perf_counter()
 
@@ -78,6 +81,7 @@ def main():
   v2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v2)
   v3_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v3)
   v4_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v4)
+  v5_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v5)
   k1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k1)
   k2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k2)
   i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=i_pars)
@@ -86,7 +90,7 @@ def main():
   program.oscillator(queue, (n,), (64,),
                      fn_buf, y_buf,
                      err_buf,info_buf,n_info_buf,
-                     v1_buf, v2_buf, v3_buf, v4_buf, k1_buf, k2_buf,
+                     v1_buf, v2_buf, v3_buf, v4_buf, v5_buf, k1_buf, k2_buf,
                      i_pars_buf,f_pars_buf)
   # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
   # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html

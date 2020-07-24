@@ -9,14 +9,14 @@
 __kernel void oscillator(__global const int *fn,
                          __global FLOAT *y,
                          __global int *err, __global FLOAT *info,__global int *n_info,
-                         __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4,
+                         __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4, __global const FLOAT *v5,
                          __global const int *k1,  __global const int *k2,
                          __global const long *i_pars, __global const FLOAT *f_pars
                           ) {
   int i = get_global_id(0); // index of the current element in the computational grid
   *err = 0;
   if (*fn==HONK_FN_ZETA) {fn_zeta(y,i); return;}
-  if (*fn==HONK_FN_OSC) {fn_osc(y,i,err,info,n_info,v1,v2,v3,v4,k1,k2,i_pars,f_pars); return;}
+  if (*fn==HONK_FN_OSC) {fn_osc(y,i,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars); return;}
   *err = HONK_ERR_UNDEFINED_FN;
 }
 #endif
@@ -31,6 +31,7 @@ void fn_osc(__global FLOAT *y,int i,
                          __global int *err, __global FLOAT *info,__global int *n_info,
                          __global const FLOAT *v1, __global const FLOAT *v2,
                          __global const FLOAT *v3, __global const FLOAT *v4,
+                         __global const FLOAT *v5,
                          __global const int *k1,  __global const int *k2,
                          __global const long *i_pars, __global const FLOAT *f_pars) {
   int samples_per_instance = i_pars[0];
@@ -38,6 +39,7 @@ void fn_osc(__global FLOAT *y,int i,
   // copy data to local memory for efficiency:
   __local int omega_n[MAX_PARTIALS];
   __local int a_n[MAX_PARTIALS];
+  __local FLOAT phase[MAX_PARTIALS];
   __local FLOAT omega_knots[MAX_SPLINE_KNOTS];
   __local FLOAT a_knots[MAX_SPLINE_KNOTS];
   __local FLOAT omega_c_local[MAX_SPLINE_COEFFS];
@@ -47,6 +49,7 @@ void fn_osc(__global FLOAT *y,int i,
   for (int m=0; m<n_partials; m++) {
     omega_n[m] = k1[m];
     a_n[m]     = k2[m];
+    phase[m]   = v5[m];
   }
   // ---- copy locations of knots
   int k_omega = 0;
@@ -85,7 +88,7 @@ void fn_osc(__global FLOAT *y,int i,
   oscillator_cubic_spline(y,
                           omega_c_local,omega_knots,omega_n,
                           a_c_local,    a_knots    ,a_n,
-                          f_pars[0],f_pars[1],f_pars[2],i*samples_per_instance,(i+1)*samples_per_instance-1,n_partials,
+                          phase,f_pars[0],f_pars[1],i*samples_per_instance,(i+1)*samples_per_instance-1,n_partials,
                           err
                          );
 }
@@ -94,7 +97,7 @@ void fn_osc(__global FLOAT *y,int i,
 void oscillator_cubic_spline(__global FLOAT *y,
                              __local FLOAT *omega_c,__local FLOAT *omega_knots,__local int *omega_n,
                              __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
-                             FLOAT phase,FLOAT t0,FLOAT dt,int j1,int j2,int n_partials,
+                             __local FLOAT *phase,FLOAT t0,FLOAT dt,int j1,int j2,int n_partials,
                              __global int *err) {
   FLOAT omega,a,t;
   for (int j=j1; j<=j2; j++) {
@@ -108,6 +111,7 @@ void oscillator_cubic_spline(__global FLOAT *y,
   for (int m=0; m<n_partials; m++) {
     int this_omega_n = omega_n[m];
     int this_a_n = a_n[m];
+    FLOAT ph = phase[m];
     int omega_i = 0; // current knot number in spline for omega
     int a_i = 0;     // ... similar
     for (int j=j1; j<=j2; j++) {
@@ -116,7 +120,7 @@ void oscillator_cubic_spline(__global FLOAT *y,
       if (local_err) {*err=local_err; return;}
       a     = spline(this_a_c,    this_a_knots,    this_a_n,    SPLINE_ORDER,&a_i,    t,&local_err);
       if (local_err) {*err=local_err; return;}
-      y[j] += a*sin(omega*t+phase);  // fixme -- add in local memory, copy at end
+      y[j] += a*sin(omega*t+ph);  // fixme -- add in local memory, copy at end
     }
     this_omega_knots += this_omega_n;
     this_a_knots     += this_a_n;
