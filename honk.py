@@ -73,9 +73,7 @@ def main():
   f_pars[1] = 1/sample_freq; # dt
 
   timer_start = time.perf_counter()
-
   do_oscillator(y,context,program,queue,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars)
-
   timer_end = time.perf_counter()
    
   print("return code=",err)
@@ -84,27 +82,28 @@ def main():
   print("time = ",(timer_end-timer_start)*1000,"ms")
   print(y)
 
+  write_file('a.wav',y,n_samples,sample_freq)
+
+def write_file(filename,y,n_samples,sample_freq):
   max_abs = 0.0
   for i in range(n_samples):
     if abs(y[i]>max_abs):
       max_abs = y[i]
-
-  if True:
-    # Write to a file.
-    # convert to 16-bit signed for WAV or AIFF
-    if max_abs>0.0:
-      gain = 32760.0/max_abs
-    else:
-      gain = 1.0
-    pcm = numpy.zeros(n_samples, numpy.int16)
-    for i in range(n_samples):
-      pcm[i] = gain*y[i]
-    f = wave.open('a.wav','w')
-    f.setnchannels(1) # mono
-    f.setsampwidth(2) # 16 bits
-    f.setframerate(sample_freq)
-    f.writeframesraw(pcm)
-    f.close()
+  # Write to a file.
+  # convert to 16-bit signed for WAV or AIFF
+  if max_abs>0.0:
+    gain = 32760.0/max_abs
+  else:
+    gain = 1.0
+  pcm = numpy.zeros(n_samples, numpy.int16)
+  for i in range(n_samples):
+    pcm[i] = gain*y[i]
+  f = wave.open(filename,'w')
+  f.setnchannels(1) # mono
+  f.setsampwidth(2) # 16 bits
+  f.setframerate(sample_freq)
+  f.writeframesraw(pcm)
+  f.close()
 
 def do_oscillator(y,context,program,queue,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars):
   mem_flags = cl.mem_flags
