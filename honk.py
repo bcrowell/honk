@@ -45,15 +45,24 @@ def main():
   # knots
   v2[0] = 0.0; v2[1] = 1.0;
   v4[0] = 0.0; v4[1] = 1.0;
+  # second partial:
+  v2[2] = 0.0; v2[3] = 1.0;
+  v4[2] = 0.0; v4[3] = 1.0;
   # constant spline polynomials: [3] is the constant coefficient
   v1[3] = 1000.0*2*math.pi;  # constant omega
   v3[3] = 1.0; # constant amplitude=1
+  # second partial:
+  v1[7] = 2000.0*2*math.pi;  # constant omega
+  v3[7] = 0.5; # constant amplitude=1
   # scalar parameters:
   k1[0] = 2; # n for omega spline
   k2[0] = 2; # n for amplitude spline
+  # second partial:
+  k1[1] = 2; # n for omega spline
+  k2[1] = 2; # n for amplitude spline
   i_pars[0] = samples_per_instance;
-  i_pars[1] = 1; # number of partials
-  f_pars[0] = 0.0; # phase
+  i_pars[1] = 2; # number of partials
+  f_pars[0] = 0.0; # phase -- fixme, needs to be different for each partial
   f_pars[1] = 0.0; # t0
   f_pars[2] = 1/sample_freq; # dt
 
