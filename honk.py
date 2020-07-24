@@ -26,13 +26,12 @@ def main():
    
   queue = cl.CommandQueue(context)
    
-  n = 1024 # number of instances
+  n_instances = 1024
   sample_freq = 44100.0
   length_sec = 1.0
-  samples_per_instance = int(length_sec*sample_freq/n)
-  n_samples = n*samples_per_instance
+  samples_per_instance = int(length_sec*sample_freq/n_instances)
+  n_samples = n_instances*samples_per_instance
 
-  fn = numpy.uint32(1) # cubic spline oscillator
   y = numpy.zeros(n_samples, numpy.float32)
   err = numpy.zeros(1, numpy.int32)
   info = numpy.zeros(100, numpy.float32)
@@ -75,35 +74,7 @@ def main():
 
   timer_start = time.perf_counter()
 
-  mem_flags = cl.mem_flags
-  fn_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=fn)
-  y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
-  err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=err)
-  info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=info)
-  n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=n_info)
-  v1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v1)
-  v2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v2)
-  v3_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v3)
-  v4_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v4)
-  v5_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v5)
-  k1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k1)
-  k2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k2)
-  i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=i_pars)
-  f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=f_pars)
-   
-  program.oscillator(queue, (n,), (64,),
-                     fn_buf, y_buf,
-                     err_buf,info_buf,n_info_buf,
-                     v1_buf, v2_buf, v3_buf, v4_buf, v5_buf, k1_buf, k2_buf,
-                     i_pars_buf,f_pars_buf)
-  # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
-  # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html
-  # Args are (queue,global_size,local_size,*args).
-  # global_size is size of m-dim rectangular grid, one work item launched for each point
-  # local_size is size of workgroup, must be an integer divisor of global_size
-   
-  cl.enqueue_copy(queue, err, err_buf)
-  cl.enqueue_copy(queue, y, y_buf)
+  do_oscillator(y,context,program,queue,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars)
 
   timer_end = time.perf_counter()
    
@@ -134,6 +105,38 @@ def main():
     f.setframerate(sample_freq)
     f.writeframesraw(pcm)
     f.close()
+
+def do_oscillator(y,context,program,queue,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars):
+  mem_flags = cl.mem_flags
+  fn = numpy.uint32(1) # cubic spline oscillator
+  fn_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=fn)
+  y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
+  err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=err)
+  info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=info)
+  n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=n_info)
+  v1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v1)
+  v2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v2)
+  v3_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v3)
+  v4_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v4)
+  v5_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=v5)
+  k1_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k1)
+  k2_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=k2)
+  i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=i_pars)
+  f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=f_pars)
+   
+  program.oscillator(queue, (n_instances,), (64,),
+                     fn_buf, y_buf,
+                     err_buf,info_buf,n_info_buf,
+                     v1_buf, v2_buf, v3_buf, v4_buf, v5_buf, k1_buf, k2_buf,
+                     i_pars_buf,f_pars_buf)
+  # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
+  # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html
+  # Args are (queue,global_size,local_size,*args).
+  # global_size is size of m-dim rectangular grid, one work item launched for each point
+  # local_size is size of workgroup, must be an integer divisor of global_size
+   
+  cl.enqueue_copy(queue, err, err_buf)
+  cl.enqueue_copy(queue, y, y_buf)
 
 main()
 
