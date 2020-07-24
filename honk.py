@@ -5,6 +5,8 @@ import pyopencl as cl
 from pyopencl import array
 import numpy
 
+from opencl_device import OpenClDevice
+
 # based on code from   https://www.drdobbs.com/open-source/easy-opencl-with-python/240162614
  
 def main():
@@ -12,19 +14,8 @@ def main():
   max_spline_knots,spline_order,max_spline_coeffs,max_partials = (cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),
                                                                   cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3))
 
-  print("number of platforms = ",len(cl.get_platforms()))
-  platform = cl.get_platforms()[0]
-  device = platform.get_devices()[0]
-  context = cl.Context([device])
-   
-  with open('oscillator.cl', 'r') as f:
-    opencl_code = f.read()
-  program = cl.Program(context,opencl_code).build()
-  #    https://documen.tician.de/pyopencl/runtime_program.html
-  #    build() has optional args about caching compiled code
-  #    "returns self"
-   
-  queue = cl.CommandQueue(context)
+  dev = OpenClDevice()
+  dev.build('oscillator.cl')
    
   n_instances = 1024
   sample_freq = 44100.0
@@ -73,7 +64,7 @@ def main():
   f_pars[1] = 1/sample_freq; # dt
 
   timer_start = time.perf_counter()
-  do_oscillator(y,context,program,queue,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars)
+  do_oscillator(y,dev,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars)
   timer_end = time.perf_counter()
    
   print("return code=",err)
@@ -105,8 +96,11 @@ def write_file(filename,y,n_samples,sample_freq):
   f.writeframesraw(pcm)
   f.close()
 
-def do_oscillator(y,context,program,queue,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars):
+def do_oscillator(y,dev,n_instances,err,info,n_info,v1,v2,v3,v4,v5,k1,k2,i_pars,f_pars):
   mem_flags = cl.mem_flags
+  context = dev.context
+  program = dev.program
+  queue = dev.queue
   fn = numpy.uint32(1) # cubic spline oscillator
   fn_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=fn)
   y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
