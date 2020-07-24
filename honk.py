@@ -6,6 +6,7 @@ from pyopencl import array
 import numpy
 
 from opencl_device import OpenClDevice
+from oscillator import Oscillator
 
 # based on code from   https://www.drdobbs.com/open-source/easy-opencl-with-python/240162614
  
@@ -23,57 +24,46 @@ def main():
   samples_per_instance = int(length_sec*sample_freq/n_instances)
   n_samples = n_instances*samples_per_instance
 
-  y = numpy.zeros(n_samples, numpy.float32)
-  err = numpy.zeros(1, numpy.int32)
-  info = numpy.zeros(100, numpy.float32)
-  n_info = numpy.zeros(1, numpy.int32)
-  omega_c = numpy.zeros(max_spline_coeffs, numpy.float32)
-  omega_knots = numpy.zeros(max_spline_knots, numpy.float32)
-  a_c = numpy.zeros(max_spline_coeffs, numpy.float32)
-  a_knots = numpy.zeros(max_spline_knots, numpy.float32)
-  phase = numpy.zeros(max_partials, numpy.float32)
-  omega_n = numpy.zeros(max_partials, numpy.int32)
-  a_n = numpy.zeros(max_partials, numpy.int32)
-  i_pars = numpy.zeros(100, numpy.int64)
-  f_pars = numpy.zeros(100, numpy.float32)
+  osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
   # knots
-  omega_knots[0] = 0.0; omega_knots[1] = 1.0;
-  a_knots[0] = 0.0; a_knots[1] = 1.0;
+  osc.omega_knots[0] = 0.0; osc.omega_knots[1] = 1.0;
+  osc.a_knots[0] = 0.0; osc.a_knots[1] = 1.0;
   # second partial:
-  omega_knots[2] = 0.0; omega_knots[3] = 1.0;
-  a_knots[2] = 0.0; a_knots[3] = 1.0;
+  osc.omega_knots[2] = 0.0; osc.omega_knots[3] = 1.0;
+  osc.a_knots[2] = 0.0; osc.a_knots[3] = 1.0;
   # constant spline polynomials: [3] is the constant coefficient
-  omega_c[3] = 1000.0*2*math.pi;  # constant omega
-  a_c[3] = 1.0; # constant amplitude=1
+  osc.omega_c[3] = 1000.0*2*math.pi;  # constant omega
+  osc.a_c[3] = 1.0; # constant amplitude=1
   # second partial:
-  omega_c[7] = 2000.0*2*math.pi;  # constant omega
-  a_c[7] = 0.5; # constant amplitude=1
+  osc.omega_c[7] = 2000.0*2*math.pi;  # constant omega
+  osc.a_c[7] = 0.5; # constant amplitude=1
   # scalar parameters:
-  omega_n[0] = 2; # n for omega spline
-  a_n[0] = 2; # n for amplitude spline
+  osc.omega_n[0] = 2; # n for omega spline
+  osc.a_n[0] = 2; # n for amplitude spline
   # second partial:
-  omega_n[1] = 2; # n for omega spline
-  a_n[1] = 2; # n for amplitude spline
-  i_pars[0] = samples_per_instance;
-  i_pars[1] = 2; # number of partials
+  osc.omega_n[1] = 2; # n for omega spline
+  osc.a_n[1] = 2; # n for amplitude spline
+  osc.i_pars[0] = samples_per_instance;
+  osc.i_pars[1] = 2; # number of partials
   # phases
-  phase[0] = 0.0;
-  phase[1] = 0.0;
-  f_pars[0] = 0.0; # t0
-  f_pars[1] = 1/sample_freq; # dt
+  osc.phase[0] = 0.0;
+  osc.phase[1] = 0.0;
+  osc.f_pars[0] = 0.0; # t0
+  osc.f_pars[1] = 1/sample_freq; # dt
 
   timer_start = time.perf_counter()
-  do_oscillator(y,dev,n_instances,err,info,n_info,omega_c,omega_knots,a_c,a_knots,phase,omega_n,a_n,i_pars,f_pars)
+  do_oscillator(osc.y,dev,n_instances,
+                osc.err,osc.info,osc.n_info,osc.omega_c,osc.omega_knots,osc.a_c,osc.a_knots,osc.phase,osc.omega_n,osc.a_n,osc.i_pars,osc.f_pars)
   timer_end = time.perf_counter()
    
-  print("return code=",err)
-  if err!=0:
+  print("return code=",osc.error_code())
+  if osc.error_code()!=0:
     sys.exit(" ******* exiting with an error **********")
   print("time = ",(timer_end-timer_start)*1000,"ms")
-  print(y)
+  print(osc.y)
 
-  write_file('a.wav',y,n_samples,sample_freq)
+  write_file('a.wav',osc.y,n_samples,sample_freq)
 
 def write_file(filename,y,n_samples,sample_freq):
   max_abs = 0.0
