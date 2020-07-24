@@ -7,6 +7,7 @@ import numpy
 
 from opencl_device import OpenClDevice
 from oscillator import Oscillator
+from partial import Partial
 
 # based on code from   https://www.drdobbs.com/open-source/easy-opencl-with-python/240162614
  
@@ -25,6 +26,14 @@ def main():
   n_samples = n_instances*samples_per_instance
 
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
+
+  p1 = Partial([0,1],[1000,1000],[0,1],[1,1],0)
+  p2 = Partial([0,1],[2000,2000],[0,1],[1,1],0)
+
+
+  osc.setup([p1,p2])
+
+  print(osc)
 
   # knots
   osc.omega_knots[0] = 0.0; osc.omega_knots[1] = 1.0;
@@ -51,6 +60,9 @@ def main():
   osc.phase[1] = 0.0;
   osc.f_pars[0] = 0.0; # t0
   osc.f_pars[1] = 1/sample_freq; # dt
+
+  print(osc)
+
 
   timer_start = time.perf_counter()
   do_oscillator(osc.y,dev,n_instances,

@@ -1,4 +1,5 @@
-import numpy
+import numpy,functools,scipy,math
+from scipy import interpolate
 
 class Oscillator:
   def __init__(self,n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials):
@@ -32,3 +33,26 @@ class Oscillator:
     self.i_pars = numpy.zeros(100, numpy.int64)
     self.f_pars = numpy.zeros(100, numpy.float32)
 
+  def setup(self,partials):
+    self.clear()
+    # create flattened versions of input data for consumption by opencl
+    two_pi = 2.0*math.pi
+    copy_into_numpy_array(self.omega_knots,   functools.reduce(cat,list(map(lambda p:p.omega_times,partials))) )
+    copy_into_numpy_array(self.a_knots,       functools.reduce(cat,list(map(lambda p:p.a_times,partials))) )
+    copy_into_numpy_array(self.phase,         [p.phase for p in partials] )
+    copy_into_numpy_array(self.omega_c,       functools.reduce(cat,list(map(lambda p:cubic_spline_coeffs(p.omega_times,p.omega_values),partials))) )
+    copy_into_numpy_array(self.a_c,           functools.reduce(cat,list(map(lambda p:cubic_spline_coeffs(p.a_times,p.a_values),partials))) )
+
+  def __str__(self):
+    return str(self.omega_c)
+
+def copy_into_numpy_array(x,y):
+  for i in range(len(y)):
+    x[i] = y[i]
+
+def cubic_spline_coeffs(x,y):
+  return scipy.interpolate.CubicSpline(x,y).c.flatten()
+
+# concatenate two lists
+def cat(l1,l2):
+  return [*l1,*l2]
