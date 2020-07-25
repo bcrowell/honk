@@ -28,11 +28,13 @@ def main():
 
   osc.setup([
     Partial(
-              Pie.from_string("0.0 200,2.0 200 ; 2.0 224,4.0 224")
+              Pie.from_string("0.0 200,2.0 224 c ; ,4.0 224")
             ,
             Pie(scipy.interpolate.CubicSpline([0.0,4.0],[1,1])),
             0)
   ])
+
+  print(Pie.from_string("0 0,1 1 c"))
 
   osc.i_pars[0] = samples_per_instance;
   osc.f_pars[0] = 0.0; # t0
