@@ -19,27 +19,32 @@ def main():
   dev = OpenClDevice()
   dev.build('oscillator.cl')
    
+  length_sec = 1.0
   n_instances = 1024
   sample_freq = 44100.0
-  length_sec = 1.0
   samples_per_instance = int(length_sec*sample_freq/n_instances)
   n_samples = n_instances*samples_per_instance
 
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
-  p1 = Partial([0,1],[1000,1000],[0,1],[1,1],0)
-  p2 = Partial([0,1],[2000,2000],[0,1],[1,1],0)
+  osc.setup([
+    Partial([0,1],[100,200],[0,1],[1,1],0)
 
 
-  osc.setup([p1,p2])
+    #Partial([0,1,4],[100,200,200],[0,0.1,3.9,4],[0,1,1,0],0)
+
+    #Partial([0,1],[100,200],[0,0.1,0.9,1],[0,1,1,0],0)
+    #,Partial([0,1],[200,400],[0,0.1,0.9,1],[0,0.5,0.5,0],0)
+  ])
 
   osc.i_pars[0] = samples_per_instance;
   osc.f_pars[0] = 0.0; # t0
   osc.f_pars[1] = 1/sample_freq; # dt
 
+  print(osc)
+
   timer_start = time.perf_counter()
-  do_oscillator(osc.y,dev,n_instances,
-                osc.err,osc.info,osc.n_info,osc.omega_c,osc.omega_knots,osc.a_c,osc.a_knots,osc.phase,osc.omega_n,osc.a_n,osc.i_pars,osc.f_pars)
+  do_oscillator(osc,dev,n_instances,n_samples)
   timer_end = time.perf_counter()
    
   print("return code=",osc.error_code())
@@ -52,6 +57,16 @@ def main():
 
 def write_file(filename,y,n_samples,sample_freq):
   max_abs = 0.0
+  illegal_at = -1
+  illegal_value = 0
+  for i in range(n_samples):
+    if math.isnan(y[i]) or y[i]<-32767.0 or y[i]>32767.0:
+      if illegal_at== -1:
+        illegal_at = i
+        illegal_value = y[i]
+      y[i] = 0
+  if illegal_at>0:
+    print("warning, illegal values in output data, first is at i=",illegal_at,", value=",illegal_value)
   for i in range(n_samples):
     if abs(y[i]>max_abs):
       max_abs = y[i]
@@ -71,24 +86,31 @@ def write_file(filename,y,n_samples,sample_freq):
   f.writeframesraw(pcm)
   f.close()
 
-def do_oscillator(y,dev,n_instances,err,info,n_info,omega_c,omega_knots,a_c,a_knots,phase,omega_n,a_n,i_pars,f_pars):
+def do_oscillator(osc,dev,n_instances,n_samples):
   mem_flags = cl.mem_flags
   context = dev.context
   program = dev.program
   queue = dev.queue
-  y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, y.nbytes)
-  err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=err)
-  info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=info)
-  n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=n_info)
-  omega_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=omega_c)
-  omega_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=omega_knots)
-  a_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=a_c)
-  a_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=a_knots)
-  phase_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=phase)
-  omega_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=omega_n)
-  a_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=a_n)
-  i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=i_pars)
-  f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=f_pars)
+  y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, osc.y.nbytes) # This doesn't initialize it to 0, because write only.
+  err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.err)
+  info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.info)
+  n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.n_info)
+  omega_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.omega_c)
+  omega_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.omega_knots)
+  a_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.a_c)
+  a_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.a_knots)
+  phase_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.phase)
+  omega_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.omega_n)
+  a_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.a_n)
+  i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.i_pars)
+  f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.f_pars)
+
+  t0 = osc.f_pars[0]
+  dt = osc.f_pars[1]
+  t1 = t0+dt*n_samples
+  if not (osc.in_time_range(t0) and osc.in_time_range(t1)):
+    print("t=",t0,t1," range=",osc.time_range())
+    die("illegal time range")
    
   program.oscillator(queue, (n_instances,), (64,),
                      y_buf,
@@ -101,8 +123,11 @@ def do_oscillator(y,dev,n_instances,err,info,n_info,omega_c,omega_knots,a_c,a_kn
   # global_size is size of m-dim rectangular grid, one work item launched for each point
   # local_size is size of workgroup, must be an integer divisor of global_size
    
-  cl.enqueue_copy(queue, err, err_buf)
-  cl.enqueue_copy(queue, y, y_buf)
+  cl.enqueue_copy(queue, osc.err, err_buf)
+  cl.enqueue_copy(queue, osc.y, y_buf)
+
+def die(message):
+  sys.exit(message)
 
 main()
 

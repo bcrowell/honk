@@ -7,3 +7,6 @@ class Partial:
     self.a_times = a_times
     self.a_values = a_values
     self.phase = phase
+
+  def time_range(self):
+    return (max(self.a_times[0],self.omega_times[0]),min(self.a_times[-1],self.omega_times[-1]))

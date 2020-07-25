@@ -94,7 +94,8 @@ void oscillator_cubic_spline(__global FLOAT *y,
                              __global int *err) {
   FLOAT omega,a,t;
   for (int j=j1; j<=j2; j++) {
-    y[j] = 0.0; // fixme -- inefficient
+    y[j] = 0.0; // y is write-only, so it can't be initialized to zero for us
+        // ... fixme -- inefficient
   }
   __local FLOAT *this_omega_c = omega_c;
   __local FLOAT *this_a_c     = a_c;

@@ -35,6 +35,7 @@ class Oscillator:
 
   def setup(self,partials):
     self.clear()
+    self.partials = partials
     # create flattened versions of input data for consumption by opencl
     two_pi = 2.0*math.pi
     copy_into_numpy_array(self.omega_knots,   functools.reduce(cat,list(map(lambda p:p.omega_times,partials))) )
@@ -47,9 +48,35 @@ class Oscillator:
       self.omega_n[i] = len(p.omega_times)
       self.a_n[i] = len(p.a_times)
     self.i_pars[1] = len(partials)
+    for p in partials:
+      print("debugging, spline coefficients for A spline ",i," = ",str(scipy.interpolate.CubicSpline(p.a_times,p.a_values).c))
+
+  def time_range(self):
+    a,b = self.partials[0].time_range()
+    for p in self.partials:
+      (aa,bb) = p.time_range()
+      a = max(a,aa)
+      b = min(b,bb)
+    return (a,b)    
+
+  def in_time_range(self,t):
+    a,b = self.time_range()
+    return (t>=a and t<=b)
 
   def __str__(self):
-    return str(self.omega_c)
+    result = ''
+    result = result + "valid time range = "+str(self.time_range())+"\n"
+    result = result + "a_knots = "+sa(self.a_knots)+"\n"
+    result = result + "a_c = "+sa(self.a_c)+"\n"
+    return result
+
+def sa(a):
+  # make an array into a string, omitting trailing zeroes
+  last_nonzero = 0
+  for i in range(len(a)):
+    if a[i]!=0:
+      last_nonzero = i
+  return str(a[0:last_nonzero+1])
 
 def copy_into_numpy_array(x,y):
   for i in range(len(y)):
