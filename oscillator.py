@@ -38,18 +38,16 @@ class Oscillator:
     self.partials = partials
     # create flattened versions of input data for consumption by opencl
     two_pi = 2.0*math.pi
-    copy_into_numpy_array(self.omega_knots,   functools.reduce(cat,list(map(lambda p:p.omega_times,partials))) )
-    copy_into_numpy_array(self.a_knots,       functools.reduce(cat,list(map(lambda p:p.a_times,partials))) )
+    copy_into_numpy_array(self.omega_knots,   functools.reduce(cat,list(map(lambda p:p.omega.x,partials))) )
+    copy_into_numpy_array(self.a_knots,       functools.reduce(cat,list(map(lambda p:p.a.x,    partials))) )
     copy_into_numpy_array(self.phase,         [p.phase for p in partials] )
-    copy_into_numpy_array(self.omega_c,       functools.reduce(cat,list(map(lambda p:cubic_spline_coeffs(p.omega_times,p.omega_values),partials))) )
-    copy_into_numpy_array(self.a_c,           functools.reduce(cat,list(map(lambda p:cubic_spline_coeffs(p.a_times,p.a_values),partials))) )
+    copy_into_numpy_array(self.omega_c,       functools.reduce(cat,list(map(lambda p:p.omega.c.flatten(),partials))) )
+    copy_into_numpy_array(self.a_c,           functools.reduce(cat,list(map(lambda p:p.a.c.flatten(),    partials))) )
     for i in range(len(partials)):
       p = partials[i]
-      self.omega_n[i] = len(p.omega_times)
-      self.a_n[i] = len(p.a_times)
+      self.omega_n[i] = len(p.omega.x)
+      self.a_n[i] = len(p.a.x)
     self.i_pars[1] = len(partials)
-    for p in partials:
-      print("debugging, spline coefficients for A spline ",i," = ",str(scipy.interpolate.CubicSpline(p.a_times,p.a_values).c))
 
   def time_range(self):
     a,b = self.partials[0].time_range()
@@ -81,9 +79,6 @@ def sa(a):
 def copy_into_numpy_array(x,y):
   for i in range(len(y)):
     x[i] = y[i]
-
-def cubic_spline_coeffs(x,y):
-  return scipy.interpolate.CubicSpline(x,y).c.flatten()
 
 # concatenate two lists
 def cat(l1,l2):

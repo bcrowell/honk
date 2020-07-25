@@ -1,6 +1,6 @@
 #!/bin/python3
 
-import wave,time,math,sys,ctypes
+import wave,time,math,sys,ctypes,scipy
 import pyopencl as cl
 from pyopencl import array
 import numpy
@@ -19,7 +19,7 @@ def main():
   dev = OpenClDevice()
   dev.build('oscillator.cl')
    
-  length_sec = 1.0
+  length_sec = 4.0
   n_instances = 1024
   sample_freq = 44100.0
   samples_per_instance = int(length_sec*sample_freq/n_instances)
@@ -28,13 +28,9 @@ def main():
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
   osc.setup([
-    Partial([0,1],[100,200],[0,1],[1,1],0)
-
-
-    #Partial([0,1,4],[100,200,200],[0,0.1,3.9,4],[0,1,1,0],0)
-
-    #Partial([0,1],[100,200],[0,0.1,0.9,1],[0,1,1,0],0)
-    #,Partial([0,1],[200,400],[0,0.1,0.9,1],[0,0.5,0.5,0],0)
+    Partial(scipy.interpolate.CubicSpline([0.0,4.0],[200.0,200.0]),
+            scipy.interpolate.CubicSpline([0.0,4.0],[1,1]),
+            0)
   ])
 
   osc.i_pars[0] = samples_per_instance;
