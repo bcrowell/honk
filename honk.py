@@ -29,10 +29,10 @@ def main():
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
   osc.setup([
-    Partial(concat_ppoly(
-              Pie(scipy.interpolate.CubicSpline([0.0,2.0],[200.0,200.0])),
-              Pie(scipy.interpolate.CubicSpline([2.0,4.0],[224.0,224.0]))
-            ),
+    Partial(
+              Pie(scipy.interpolate.CubicSpline([0.0,2.0],[200.0,200.0])).extend(
+              Pie(scipy.interpolate.CubicSpline([2.0,4.0],[224.0,224.0])))
+            ,
             Pie(scipy.interpolate.CubicSpline([0.0,4.0],[1,1])),
             0)
   ])
@@ -41,7 +41,7 @@ def main():
   osc.f_pars[0] = 0.0; # t0
   osc.f_pars[1] = 1/sample_freq; # dt
 
-  print(osc)
+  #print(osc)
 
   timer_start = time.perf_counter()
   do_oscillator(osc,dev,n_instances,n_samples)
@@ -125,12 +125,6 @@ def do_oscillator(osc,dev,n_instances,n_samples):
    
   cl.enqueue_copy(queue, osc.err, err_buf)
   cl.enqueue_copy(queue, osc.y, y_buf)
-
-def concat_ppoly(p,q):
-  r = copy.deepcopy(p)
-  print(q.x.shape,q.c.shape)
-  r.extend(q.c,q.x)
-  return r
 
 def die(message):
   sys.exit(message)
