@@ -7,10 +7,7 @@ class Partial:
     f and a are Pie objects
     """
     self.a = a
-    self.omega = copy.deepcopy(f)
-    for i in range(len(self.omega.c)):
-      for j in range(len(self.omega.c[i])):
-        self.omega.c[i][j] = math.pi*2.0*self.omega.c[i][j] # convert cycles/s to radians/s
+    self.omega = f.scalar_mult(math.pi*2.0) # convert cycles/s to radians/s
     self.phase = phase
 
   def time_range(self):

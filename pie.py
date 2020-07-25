@@ -12,6 +12,13 @@ class Pie(PPoly):
     self.x = p.x
     self.axis = p.axis # not used
 
+  def scalar_mult(self,s):
+    r = copy.deepcopy(self)
+    for i in range(len(r.c)):
+      for j in range(len(r.c[i])):
+        r.c[i][j] = s*r.c[i][j]
+    return r
+
   def time_range(self):
     return (self.x[0],self.x[-1])
 

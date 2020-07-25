@@ -10,8 +10,6 @@ from oscillator import Oscillator
 from partial import Partial
 from pie import Pie
 
-# based on code from   https://www.drdobbs.com/open-source/easy-opencl-with-python/240162614
- 
 def main():
   cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
   max_spline_knots,spline_order,max_spline_coeffs,max_partials = (cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),
