@@ -1,13 +1,14 @@
 #!/bin/python3
 
-import wave,time,math,sys,ctypes,scipy
+import wave,time,math,sys,ctypes,copy
 import pyopencl as cl
 from pyopencl import array
-import numpy
+import numpy,scipy
 
 from opencl_device import OpenClDevice
 from oscillator import Oscillator
 from partial import Partial
+from pie import Pie
 
 # based on code from   https://www.drdobbs.com/open-source/easy-opencl-with-python/240162614
  
@@ -28,8 +29,11 @@ def main():
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
   osc.setup([
-    Partial(scipy.interpolate.CubicSpline([0.0,4.0],[200.0,200.0]),
-            scipy.interpolate.CubicSpline([0.0,4.0],[1,1]),
+    Partial(concat_ppoly(
+              Pie(scipy.interpolate.CubicSpline([0.0,2.0],[200.0,200.0])),
+              Pie(scipy.interpolate.CubicSpline([2.0,4.0],[224.0,224.0]))
+            ),
+            Pie(scipy.interpolate.CubicSpline([0.0,4.0],[1,1])),
             0)
   ])
 
@@ -121,6 +125,12 @@ def do_oscillator(osc,dev,n_instances,n_samples):
    
   cl.enqueue_copy(queue, osc.err, err_buf)
   cl.enqueue_copy(queue, osc.y, y_buf)
+
+def concat_ppoly(p,q):
+  r = copy.deepcopy(p)
+  print(q.x.shape,q.c.shape)
+  r.extend(q.c,q.x)
+  return r
 
 def die(message):
   sys.exit(message)

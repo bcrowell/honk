@@ -1,9 +1,10 @@
 import math,copy
+import pie
 
 class Partial:
   def __init__(self,f,a,phase):
     """
-    f and a are scipy PPoly objects
+    f and a are Pie objects
     """
     self.a = a
     self.omega = copy.deepcopy(f)
@@ -13,5 +14,6 @@ class Partial:
     self.phase = phase
 
   def time_range(self):
-    return (max(self.a.x[0],self.omega.x[0]),min(self.a.x[-1],self.omega.x[-1]))
+    return self.a.time_intersection(self.omega)
+
 
