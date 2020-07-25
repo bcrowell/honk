@@ -28,8 +28,7 @@ def main():
 
   osc.setup([
     Partial(
-              Pie(scipy.interpolate.CubicSpline([0.0,2.0],[200.0,200.0])).extend(
-              Pie(scipy.interpolate.CubicSpline([2.0,4.0],[224.0,224.0])))
+              Pie.from_string("0.0 200,2.0 200 ; 2.0 224,4.0 224")
             ,
             Pie(scipy.interpolate.CubicSpline([0.0,4.0],[1,1])),
             0)

@@ -1,6 +1,6 @@
 # a subclass of scipy's PPoly class with some extra features
 
-import copy
+import copy,re
 import scipy
 from scipy import interpolate
 from scipy.interpolate import PPoly
@@ -11,6 +11,27 @@ class Pie(PPoly):
     self.c = p.c
     self.x = p.x
     self.axis = p.axis # not used
+
+  @classmethod
+  def from_string(cls,s):
+    """
+    constructor that takes an input in the format "t v,t v ... ; t v,t v ... ; ..."
+    """
+    if re.search(";",s):
+      l = re.split(r"\s*;\s*", s)
+      result = Pie.from_string(l[0])
+      for sub in l[1:]:
+        result = result.cat(Pie.from_string(sub))
+      return result
+    t = []
+    v = []
+    for sub in re.split(r"\s*,\s*", s):
+      capture = re.search(r"(.*)\s+(.*)",sub)
+      tt,vv = capture.group(1,2)
+      t.append(float(tt))
+      v.append(float(vv))
+    print("s=",s,"t=",t,"v=",v)
+    return Pie(scipy.interpolate.CubicSpline(t,v))
 
   def scalar_mult(self,s):
     r = copy.deepcopy(self)
@@ -30,9 +51,10 @@ class Pie(PPoly):
     b = q.time_range()
     return (max(a[0],b[0]),min(a[-1],b[-1]))
 
-  def extend(self,q):
+  def cat(self,q):
     """
-    Concatenate two Pie objects that have an endpoint in common. Returns None if they don't have an endpoint in common.
+    Concatenate two Pie objects that have an endpoint in common. Returns the result. Doesn't change the input.
+    Raises an exception if they don't have an endpoint in common.
     """
     r = copy.deepcopy(self)
     # Not sure if I'm interpreting the docs for PPoly.extent() correctly. It looks like they want the initial element of q.x,
