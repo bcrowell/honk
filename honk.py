@@ -30,7 +30,9 @@ def main():
     Partial(
               Pie.from_string("0.0 200,2.0 224 c ; ,4.0 224")
             ,
-            Pie(scipy.interpolate.CubicSpline([0.0,4.0],[1,1])),
+              Pie.from_string("0 0,0.2 1 c ; , 3.8 1 ;  , 4.0 0 c")
+            ,
+#            Pie(scipy.interpolate.CubicSpline([0.0,4.0],[1,1])),
             0)
   ])
 
@@ -75,6 +77,7 @@ def write_file(filename,y,n_samples,sample_freq):
     gain = 32760.0/max_abs
   else:
     gain = 1.0
+  gain *= 0.3
   pcm = numpy.zeros(n_samples, numpy.int16)
   for i in range(n_samples):
     pcm[i] = gain*y[i]

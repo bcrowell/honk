@@ -23,15 +23,29 @@ class Pie(PPoly):
     """
     if re.search(";",s):
       l = re.split(r"\s*;\s*", s)
-      result = Pie.from_string(l[0])
-      for sub in l[1:]:
-        result = result.cat(Pie.from_string(sub,result.__last_pair))
+      a = []
+      for i in range(len(l)):
+        sub = l[i]
+        if i==0:
+          a.append(Pie.from_string(sub))
+        else:
+          a.append(Pie.from_string(sub,a[-1].last_pair))
+      for i in range(len(l)):
+        aa = a[i]
+        if i==0:
+          result = aa
+        else:
+          result = result.cat(aa)
       return result
     bc = 'not-a-knot'
     if re.search("c",s):
       bc = 'clamped'
     t = []
     v = []
+    print("-----------------------------------------------------------------------")
+    print(f"chunk: '{s}'   last_pair={last_pair}")
+    z = re.split(r"\s*,\s*", s)
+    print(f"split: {z}")
     for sub in re.split(r"\s*,\s*", s):
       if re.search("[^\s]",sub):
         capture = re.search(r"([^\s]*)\s+([^c\s]*)",sub)
@@ -41,7 +55,7 @@ class Pie(PPoly):
       t.append(float(tt))
       v.append(float(vv))
     result = Pie(scipy.interpolate.CubicSpline(t,v,bc_type=bc))
-    result.__last_pair = [t[-1],v[-1]] # for use within constructor
+    result.last_pair = [t[-1],v[-1]] # for use within constructor
     return result
 
   def scalar_mult(self,s):
@@ -71,7 +85,7 @@ class Pie(PPoly):
     # Not sure if I'm interpreting the docs for PPoly.extent() correctly. It looks like they want the initial element of q.x,
     # which duplicates the last element of r.x, to be deleted.
     if abs(r.x[-1]-q.x[0])>3.0e-5: # tolerance slighly longer than one sample at 44.1 kHz
-      raise Exception("endpoints do not coincide")
+      raise Exception(f"endpoints {r.x[-1]} and {q.x[0]} do not coincide")
     super(Pie,r).extend(q.c,q.x[1:])
     return r
 
