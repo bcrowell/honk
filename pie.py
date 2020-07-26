@@ -1,16 +1,23 @@
-# a subclass of scipy's PPoly class with some extra features
+"""
+A subclass of scipy's PPoly class with some extra features:
+  - a convenience method for creating it from a string describing a series of splines
+  - scalar multiplication
+  - time range and intersections of time ranges
+  - cat and join methods
+  - graphing
+"""
+
 
 import copy,re
 import scipy
 from scipy import interpolate
 from scipy.interpolate import PPoly
+import matplotlib
+import matplotlib.pyplot as plt
 
 class Pie(PPoly):
   def __init__(self,p):
-    # p is a PPoly object
-    self.c = p.c
-    self.x = p.x
-    self.axis = p.axis # not used
+    super(Pie,self).__init__(p.c,p.x)
 
   @classmethod
   def from_string(cls,s,last_pair=None):
@@ -47,6 +54,9 @@ class Pie(PPoly):
     result = Pie(scipy.interpolate.CubicSpline(t,v,bc_type=bc))
     result.last_pair = [t[-1],v[-1]] # for use within constructor
     return result
+
+  def eval(self,x):
+    return self(x)
 
   def scalar_mult(self,s):
     r = copy.deepcopy(self)
@@ -98,3 +108,18 @@ class Pie(PPoly):
     result = result + "  c = "+str(self.c)+"\n"
     return result
     
+  def graph(self,filename,t1,t2,n):
+    # https://matplotlib.org/gallery/lines_bars_and_markers/simple_plot.html#sphx-glr-gallery-lines-bars-and-markers-simple-plot-py
+    # format inferred from filename's extension, png works
+    tt = []
+    yy = []
+    dt = (t2-t1)/(n-1)
+    for i in range(n):
+      t = t1+dt*i
+      tt.append(t)
+      yy.append(self.eval(t))
+    fig, ax = plt.subplots()
+    ax.plot(tt, yy)
+    print(f'graph written to file {filename}')
+    fig.savefig(filename)
+

@@ -9,6 +9,7 @@ from opencl_device import OpenClDevice
 from oscillator import Oscillator
 from partial import Partial
 from pie import Pie
+from scipy.interpolate import CubicSpline # qwe
 
 def main():
   cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
@@ -27,8 +28,8 @@ def main():
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
   p1 = Partial(
-              Pie.from_string("0.0 200,2.0 224 c ; ,4.0 224"),
-              Pie.from_string("0 0,0.5 1 c ; , 3.5 1 ;  , 4.0 0 c"),
+              Pie.from_string("0.0 200,2.0 224 c ; , 2.5 214 , 3.0 234 , 3.5 214 , 4.0 224 c"),
+              Pie.from_string("0 0,0.5 0.5 c ; , 2 1 ; , 3.5 1 ;  , 4.0 0 c"),
               0)
   p2 = p1.scale_f(3).scale_a(1.0/3.0)
   p3 = p1.scale_f(5).scale_a(1.0/5.0)
@@ -40,7 +41,10 @@ def main():
   osc.f_pars[0] = 0.0; # t0
   osc.f_pars[1] = 1/sample_freq; # dt
 
-  #print(osc)
+  om = p1.omega.scalar_mult(1/(2.0*math.pi))
+  #om = CubicSpline([0,1],[3,4])
+  print(f'om(0)={om(0.0)}')
+  om.graph("a.png",0,4,100)
 
   timer_start = time.perf_counter()
   do_oscillator(osc,dev,n_instances,n_samples)
