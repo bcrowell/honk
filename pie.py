@@ -30,22 +30,12 @@ class Pie(PPoly):
           a.append(Pie.from_string(sub))
         else:
           a.append(Pie.from_string(sub,a[-1].last_pair))
-      for i in range(len(l)):
-        aa = a[i]
-        if i==0:
-          result = aa
-        else:
-          result = result.cat(aa)
-      return result
+      return Pie.join(a)
     bc = 'not-a-knot'
     if re.search("c",s):
       bc = 'clamped'
     t = []
     v = []
-    print("-----------------------------------------------------------------------")
-    print(f"chunk: '{s}'   last_pair={last_pair}")
-    z = re.split(r"\s*,\s*", s)
-    print(f"split: {z}")
     for sub in re.split(r"\s*,\s*", s):
       if re.search("[^\s]",sub):
         capture = re.search(r"([^\s]*)\s+([^c\s]*)",sub)
@@ -79,7 +69,7 @@ class Pie(PPoly):
   def cat(self,q):
     """
     Concatenate two Pie objects that have an endpoint in common. Returns the result. Doesn't change the input.
-    Raises an exception if they don't have an endpoint in common.
+    Raises an exception if they don't have an endpoint in common. To concatenate more than two Pie objects, use join().
     """
     r = copy.deepcopy(self)
     # Not sure if I'm interpreting the docs for PPoly.extent() correctly. It looks like they want the initial element of q.x,
@@ -88,6 +78,19 @@ class Pie(PPoly):
       raise Exception(f"endpoints {r.x[-1]} and {q.x[0]} do not coincide")
     super(Pie,r).extend(q.c,q.x[1:])
     return r
+
+  @classmethod
+  def join(cls,a):
+    """
+    Pie.join([p1,p2,...]) returns a Pie made by concatenating p1, p2, ...
+    """
+    for i in range(len(a)):
+      aa = a[i]
+      if i==0:
+        result = copy.deepcopy(aa)
+      else:
+        result = result.cat(aa)
+    return result
 
   def __str__(self):
     result = ''

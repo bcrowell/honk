@@ -30,7 +30,7 @@ def main():
     Partial(
               Pie.from_string("0.0 200,2.0 224 c ; ,4.0 224")
             ,
-              Pie.from_string("0 0,0.2 1 c ; , 3.8 1 ;  , 4.0 0 c")
+              Pie.from_string("0 0,0.5 1 c ; , 3.5 1 ;  , 4.0 0 c")
             ,
 #            Pie(scipy.interpolate.CubicSpline([0.0,4.0],[1,1])),
             0)
