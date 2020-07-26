@@ -29,8 +29,8 @@ def main():
 
   p1 = Partial(
               Pie.from_string("0.0 200,2.0 224 c ; , 2.5 214 , 3.0 234 , 3.5 214 , 4.0 224 c"),
-              Pie.from_string("0 0,0.5 0.5 c ; , 2 1 ; , 3.5 1 ;  , 4.0 0 c"),
-              0)
+              Pie.from_string("0 0,0.5 0.5 c ; , 2 1 ; , 3.5 1 ;  , 4.0 0 c")
+              )
   p2 = p1.scale_f(3).scale_a(1.0/3.0)
   p3 = p1.scale_f(5).scale_a(1.0/5.0)
   p4 = p1.scale_f(7).scale_a(1.0/7.0)
@@ -41,10 +41,7 @@ def main():
   osc.f_pars[0] = 0.0; # t0
   osc.f_pars[1] = 1/sample_freq; # dt
 
-  om = p1.omega.scalar_mult(1/(2.0*math.pi))
-  #om = CubicSpline([0,1],[3,4])
-  print(f'om(0)={om(0.0)}')
-  om.graph("a.png",0,4,100)
+  p1.f.graph("a.png",0,4,100) # make a graph of the frequency of the fundamental
 
   timer_start = time.perf_counter()
   do_oscillator(osc,dev,n_instances,n_samples)
@@ -99,12 +96,11 @@ def do_oscillator(osc,dev,n_instances,n_samples):
   err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.err)
   info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.info)
   n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.n_info)
-  omega_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.omega_c)
-  omega_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.omega_knots)
+  phi_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.phi_c)
+  phi_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.phi_knots)
   a_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.a_c)
   a_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.a_knots)
-  phase_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.phase)
-  omega_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.omega_n)
+  phi_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.phi_n)
   a_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.a_n)
   i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.i_pars)
   f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=osc.f_pars)
@@ -119,7 +115,7 @@ def do_oscillator(osc,dev,n_instances,n_samples):
   program.oscillator(queue, (n_instances,), (64,),
                      y_buf,
                      err_buf,info_buf,n_info_buf,
-                     omega_c_buf, omega_knots_buf, a_c_buf, a_knots_buf, phase_buf, omega_n_buf, a_n_buf,
+                     phi_c_buf, phi_knots_buf, a_c_buf, a_knots_buf, phi_n_buf, a_n_buf,
                      i_pars_buf,f_pars_buf)
   # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
   # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html

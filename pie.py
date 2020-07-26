@@ -1,6 +1,7 @@
 """
 A subclass of scipy's PPoly class with some extra features:
   - a convenience method for creating it from a string describing a series of splines
+  - read out the order of the polynomial
   - scalar multiplication
   - time range and intersections of time ranges
   - cat and join methods
@@ -57,6 +58,9 @@ class Pie(PPoly):
 
   def eval(self,x):
     return self(x)
+
+  def order(self):
+    return len(self.c)-1
 
   def scalar_mult(self,s):
     r = copy.deepcopy(self)

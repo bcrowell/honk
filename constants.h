@@ -4,7 +4,8 @@
 #define HONK_ERR_TOO_MANY_KNOTS_IN_SPLINE 4
 
 #define MAX_SPLINE_KNOTS 80
-#define SPLINE_ORDER 3
-#define MAX_SPLINE_COEFFS (MAX_SPLINE_KNOTS*(SPLINE_ORDER+1))
+#define A_SPLINE_ORDER 3
+#define PHASE_SPLINE_ORDER 4
+#define MAX_SPLINE_COEFFS (MAX_SPLINE_KNOTS*(PHASE_SPLINE_ORDER+1))
 // ... total number of cubic spline coefficients in all partials
 #define MAX_PARTIALS 16

@@ -23,12 +23,11 @@ class Oscillator:
     self.err = numpy.zeros(1, numpy.int32)
     self.info = numpy.zeros(100, numpy.float32)
     self.n_info = numpy.zeros(1, numpy.int32)
-    self.omega_c = numpy.zeros(self.max_spline_coeffs, numpy.float32)
-    self.omega_knots = numpy.zeros(self.max_spline_knots, numpy.float32)
+    self.phi_c = numpy.zeros(self.max_spline_coeffs, numpy.float32)
+    self.phi_knots = numpy.zeros(self.max_spline_knots, numpy.float32)
     self.a_c = numpy.zeros(self.max_spline_coeffs, numpy.float32)
     self.a_knots = numpy.zeros(self.max_spline_knots, numpy.float32)
-    self.phase = numpy.zeros(self.max_partials, numpy.float32)
-    self.omega_n = numpy.zeros(self.max_partials, numpy.int32)
+    self.phi_n = numpy.zeros(self.max_partials, numpy.int32)
     self.a_n = numpy.zeros(self.max_partials, numpy.int32)
     self.i_pars = numpy.zeros(100, numpy.int64)
     self.f_pars = numpy.zeros(100, numpy.float32)
@@ -38,14 +37,13 @@ class Oscillator:
     self.partials = partials
     # create flattened versions of input data for consumption by opencl
     two_pi = 2.0*math.pi
-    copy_into_numpy_array(self.omega_knots,   functools.reduce(cat,list(map(lambda p:p.omega.x,partials))) )
+    copy_into_numpy_array(self.phi_knots,     functools.reduce(cat,list(map(lambda p:p.phi.x,partials))) )
     copy_into_numpy_array(self.a_knots,       functools.reduce(cat,list(map(lambda p:p.a.x,    partials))) )
-    copy_into_numpy_array(self.phase,         [p.phase for p in partials] )
-    copy_into_numpy_array(self.omega_c,       functools.reduce(cat,list(map(lambda p:p.omega.c.flatten(),partials))) )
+    copy_into_numpy_array(self.phi_c,         functools.reduce(cat,list(map(lambda p:p.phi.c.flatten(),partials))) )
     copy_into_numpy_array(self.a_c,           functools.reduce(cat,list(map(lambda p:p.a.c.flatten(),    partials))) )
     for i in range(len(partials)):
       p = partials[i]
-      self.omega_n[i] = len(p.omega.x)
+      self.phi_n[i] = len(p.phi.x)
       self.a_n[i] = len(p.a.x)
     self.i_pars[1] = len(partials)
 

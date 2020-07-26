@@ -2,20 +2,26 @@ import math,copy
 import pie
 
 class Partial:
-  def __init__(self,f,a,phase):
+  def __init__(self,f,a):
     """
     f and a are Pie objects
     """
     self.a = a
-    self.omega = f.scalar_mult(math.pi*2.0) # convert cycles/s to radians/s
-    self.phase = phase
+    self.f = f # leave a copy here for things like graphing and debugging, but this is not actually used in computations
+    self.phi = f.scalar_mult(math.pi*2.0).antiderivative()
+    # ... Convert cycles/s to radians/s, then integrate. This should result in a fourth-order polynomial representing the phase phi(t).
+    if self.a.order()!=3:
+      raise Exception(f"in constructor for Partial, amplitude is not a cubic polynomial, has order {self.a.order()} instead")
+    if self.phi.order()!=4:
+      raise Exception(f"in constructor for Partial, phase is not a quartic polynomial, has order {self.phi.order()} instead")
 
   def time_range(self):
-    return self.a.time_intersection(self.omega)
+    return self.a.time_intersection(self.phi)
 
   def scale_f(self,s):
     result = copy.deepcopy(self)
-    result.omega = result.omega.scalar_mult(s)
+    result.phi = result.phi.scalar_mult(s)
+    result.f = result.f.scalar_mult(s)
     return result
 
   def scale_a(self,s):
