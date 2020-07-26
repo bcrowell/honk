@@ -13,4 +13,12 @@ class Partial:
   def time_range(self):
     return self.a.time_intersection(self.omega)
 
+  def scale_f(self,s):
+    result = copy.deepcopy(self)
+    result.omega = result.omega.scalar_mult(s)
+    return result
 
+  def scale_a(self,s):
+    result = copy.deepcopy(self)
+    result.a = result.a.scalar_mult(s)
+    return result

@@ -26,17 +26,15 @@ def main():
 
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
-  osc.setup([
-    Partial(
-              Pie.from_string("0.0 200,2.0 224 c ; ,4.0 224")
-            ,
-              Pie.from_string("0 0,0.5 1 c ; , 3.5 1 ;  , 4.0 0 c")
-            ,
-#            Pie(scipy.interpolate.CubicSpline([0.0,4.0],[1,1])),
-            0)
-  ])
+  p1 = Partial(
+              Pie.from_string("0.0 200,2.0 224 c ; ,4.0 224"),
+              Pie.from_string("0 0,0.5 1 c ; , 3.5 1 ;  , 4.0 0 c"),
+              0)
+  p2 = p1.scale_f(3).scale_a(1.0/3.0)
+  p3 = p1.scale_f(5).scale_a(1.0/5.0)
+  p4 = p1.scale_f(7).scale_a(1.0/7.0)
 
-  print(Pie.from_string("0 0,1 1 c"))
+  osc.setup([ p1,p2,p3,p4  ])
 
   osc.i_pars[0] = samples_per_instance;
   osc.f_pars[0] = 0.0; # t0
