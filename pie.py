@@ -106,6 +106,27 @@ class Pie(PPoly):
         result = result.cat(aa)
     return result
 
+  def restrict(self,t1,t2):
+    """
+    Create a new Pie object by restricting the range of the t variable to [t1,t2].
+    """
+    n = len(self.x)
+    # by default we need them all:
+    lo_i = 0
+    hi_i = n-1
+    # which don't we need?
+    for i in range(n):
+      if i+1<=n-1 and t1>self.x[i+1]: # [i,i+1] is too early to be needed
+        lo_i = i+1
+    for i in range(n-2,-1,-1): # count from n-2 down to 0
+      if i>=0 and t2<self.x[i]: # [i,i+1] is too late to be needed
+        hi_i = i
+    result = copy.deepcopy(self)
+    result.x = result.x[lo_i:hi_i+1]
+    for i in range(len(self.c)):
+      result.c[i] = result.c[i][lo_i:hi_i]
+    return result
+
   def __str__(self):
     result = ''
     result = result + "  x = "+str(self.x)+"\n"
