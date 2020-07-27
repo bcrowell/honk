@@ -2,7 +2,7 @@
 #include <math.h>
 #endif
 
-#define DEBUG 1
+#define DEBUG 0
 
 #include "gpu.h"
 #include "honk.h"
@@ -47,20 +47,17 @@ void fn_osc(__global FLOAT *y,int i,
   // ---- copy locations of knots
   int k_phi = 0;
   int k_a = 0;
-  int qwe = 0;
   for (int m=0; m<n_partials; m++) {
     int this_phi_n = phi_n[m];
     int this_a_n = a_n[m];
     if (k_phi+this_phi_n>MAX_SPLINE_KNOTS || k_a+this_a_n>MAX_SPLINE_KNOTS) {*err=HONK_ERR_TOO_MANY_KNOTS_IN_SPLINE; return;}
     for (int j=0; j<this_phi_n; j++) {
 #if DEBUG
-      if (k_phi+j>MAX_SPLINE_KNOTS) {*err=1000+m;return;}
       if (k_phi+j>MAX_SPLINE_KNOTS) {*err=HONK_INDEX_OUT_OF_RANGE;return;}
 #endif
       phi_knots[k_phi+j] = v2[k_phi+j];
     }
     for (int j=0; j<this_a_n; j++) {
-      if (k_a==0 && j==0 && !isnan(v4[k_a+j])) {qwe=1;}
       a_knots[k_a+j]     = v4[k_a+j];
     }
     k_phi += this_phi_n;
@@ -76,7 +73,7 @@ void fn_osc(__global FLOAT *y,int i,
     int a_size =     (this_a_n-1)    *(A_SPLINE_ORDER+1);
     if (k_phi+phi_size>MAX_SPLINE_COEFFS || k_a+a_size>MAX_SPLINE_COEFFS) {*err=HONK_ERR_SPLINE_TOO_LARGE; return;}
     for (int j=0; j<phi_size; j++) {
-      phi_c_local[k_phi+j] = v1[k_phi+j]; // ************ is this right now?
+      phi_c_local[k_phi+j] = v1[k_phi+j];
     }
     for (int j=0; j<a_size; j++) {
       a_c_local[k_a+j]     = v3[k_a+j];
@@ -84,9 +81,6 @@ void fn_osc(__global FLOAT *y,int i,
     k_phi += phi_size;
     k_a     += a_size;
   }
-#if DEBUG
-  if (isnan(a_knots[0])) {*err=HONK_ERR_NAN;return;}
-#endif
   oscillator_cubic_spline(y,
                           phi_c_local,phi_knots,phi_n,
                           a_c_local,    a_knots    ,a_n,

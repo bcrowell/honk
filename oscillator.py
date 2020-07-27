@@ -37,7 +37,6 @@ class Oscillator:
     self.partials = partials
     if len(functools.reduce(cat,list(map(lambda p:p.phi.x,partials))))>self.max_spline_knots:
       raise Exception("too many phi knots")
-    print("n phi knots = ",len(functools.reduce(cat,list(map(lambda p:p.phi.x,partials))))) # qwe
     # create flattened versions of input data for consumption by opencl
     two_pi = 2.0*math.pi
     copy_into_numpy_array(self.phi_knots,     functools.reduce(cat,list(map(lambda p:p.phi.x,partials))) )
@@ -48,7 +47,6 @@ class Oscillator:
       p = partials[i]
       self.phi_n[i] = len(p.phi.x)
       self.a_n[i] = len(p.a.x)
-      print("partial ",i,", n phi knots=",self.phi_n[i]) # qwe
     self.i_pars[1] = len(partials)
 
   def time_range(self):
