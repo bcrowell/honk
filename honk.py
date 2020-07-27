@@ -28,7 +28,7 @@ def main():
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
   p1 = Partial(
-              Pie.from_string("0.0 200,2.0 224 c ; , 2.5 214 , 3.0 234 , 3.5 214 , 4.0 224 c"),
+              Pie.from_string("0.0 200,2.0 224 c ; , 2.3 224 , 2.5 214 , 2.65 234 , 2.8 214 , 2.95 234 , 3.1 214 , 3.25 234 , 3.4 234 , 3.65 224 , 4.0 224 c"),
               Pie.from_string("0 0,0.5 0.5 c ; , 2 1 ; , 3.5 1 ;  , 4.0 0 c")
               )
   p2 = p1.scale_f(3).scale_a(1.0/3.0)
