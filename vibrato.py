@@ -44,12 +44,10 @@ def generate(fc,t,rate1,rate2,width,shape_r,shape_w):
     else:
       sgn = -1.0
     fn.append(fc+env_w(te)*sgn)
-  print("tn=",tn)
-  #print(env_w(1.5))
-  print("fn=",fn)
+  return Pie.join_extrema(tn,fn)
 
-# test code, to be removed later
 
-generate(100,3,5,7,1,[3,5,2,1],[3,5,2,1])
+
+
 
   

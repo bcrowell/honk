@@ -10,6 +10,7 @@ from oscillator import Oscillator
 from partial import Partial
 from pie import Pie
 from scipy.interpolate import CubicSpline # qwe
+import vibrato
 
 def main():
   cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
@@ -27,7 +28,10 @@ def main():
 
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
-  p1 = Partial(
+  vib = vibrato.generate(100,3,5,7,1,[3,5,2,1],[3,5,2,1])
+  p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0"))
+  if False:
+    p1 = Partial(
               Pie.from_string("0.0 200,2.0 224 c ; , 2.3 224 , 2.5 214 , 2.65 234 , 2.8 214 , 2.95 234 , 3.1 214 , 3.25 234 , 3.4 234 , 3.65 224 , 4.0 224 c"),
               Pie.from_string("0 0,0.5 0.5 c ; , 2 1 ; , 3.5 1 ;  , 4.0 0 c")
               )
