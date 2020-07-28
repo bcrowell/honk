@@ -20,7 +20,7 @@ def main():
   dev = OpenClDevice()
   dev.build('oscillator.cl')
    
-  length_sec = 4.0
+  length_sec = 3.0
   n_instances = 1024
   sample_freq = 44100.0
   samples_per_instance = int(length_sec*sample_freq/n_instances)

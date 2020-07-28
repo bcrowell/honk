@@ -6,7 +6,9 @@
 #define HONK_INDEX_OUT_OF_RANGE 6
 #define HONK_ILLEGAL_VALUE 7
 
-#define MAX_SPLINE_KNOTS 80
+// When changing one of the following, need to do a "make cpu_c.so".
+
+#define MAX_SPLINE_KNOTS 200
 #define A_SPLINE_ORDER 3
 #define PHASE_SPLINE_ORDER 4
 #define MAX_SPLINE_COEFFS (MAX_SPLINE_KNOTS*(PHASE_SPLINE_ORDER+1))

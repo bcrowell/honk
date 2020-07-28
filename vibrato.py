@@ -44,6 +44,8 @@ def generate(fc,t,rate1,rate2,width,shape_r,shape_w):
     else:
       sgn = -1.0
     fn.append(fc+env_w(te)*sgn)
+  tn.append(t)
+  fn.append(fc)
   return Pie.join_extrema(tn,fn)
 
 

@@ -7,7 +7,7 @@
 
 int get_max_sizes(int what) {
   if (what==0) {return MAX_SPLINE_KNOTS;}
-  if (what==1) {return SPLINE_ORDER;}
+  if (what==1) {return PHASE_SPLINE_ORDER;} // is greater than A_SPLINE_ORDER
   if (what==2) {return MAX_SPLINE_COEFFS;}
   if (what==3) {return MAX_PARTIALS;}
   return -1;

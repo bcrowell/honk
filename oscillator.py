@@ -35,8 +35,9 @@ class Oscillator:
   def setup(self,partials):
     self.clear()
     self.partials = partials
-    if len(functools.reduce(cat,list(map(lambda p:p.phi.x,partials))))>self.max_spline_knots:
-      raise Exception("too many phi knots")
+    n_knots = len(functools.reduce(cat,list(map(lambda p:p.phi.x,partials))))
+    if n_knots>self.max_spline_knots:
+      raise Exception(f"too many phi knots, {n_knots}>{self.max_spline_knots}")
     # create flattened versions of input data for consumption by opencl
     two_pi = 2.0*math.pi
     copy_into_numpy_array(self.phi_knots,     functools.reduce(cat,list(map(lambda p:p.phi.x,partials))) )
