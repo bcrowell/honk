@@ -6,6 +6,7 @@ A subclass of scipy's PPoly class with some extra features:
   - time range and intersections of time ranges
   - cat and join methods
   - graphing
+  - window
 """
 
 
@@ -17,6 +18,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 class Pie(PPoly):
+  # construct it from a PPoly object, e.g., Pie(scipy.interpolate.CubicSpline([...],[...],bc_type=bc))
   def __init__(self,p):
     super(Pie,self).__init__(p.c,p.x)
 
@@ -158,3 +160,14 @@ class Pie(PPoly):
     print(f'graph written to file {filename}')
     fig.savefig(filename)
 
+  @classmethod
+  def window(cls,t,y1,y2):
+    """
+    Construct a "window" function analogous to things like Hamming windows.
+    t[] should have 6 elements.
+    """
+    y = [y1,y1,y2,y2,y1,y1]
+    p = []
+    for i in range(5):
+      p.append(Pie(scipy.interpolate.CubicSpline([t[i],t[i+1]],[y[i],y[i+1]],bc_type='clamped')))
+    return Pie.join(p)
