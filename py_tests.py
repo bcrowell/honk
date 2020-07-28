@@ -1,8 +1,11 @@
+#!/bin/python3
+
 import math
 from pie import Pie
 
 def main():
   assert_equal( Pie.from_string("0 0,1 1").restrict(0.3,0.7)(0.4) , 0.4 )
+  assert_equal( Pie.from_string("0 0,1 1,2 2").restrict(0.3,0.7)(0.4) , 0.4 )
 
 def barf(dat):
   raise Exception(' '.join(dat))

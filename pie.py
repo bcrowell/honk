@@ -10,7 +10,7 @@ A subclass of scipy's PPoly class with some extra features:
 
 
 import copy,re
-import scipy
+import scipy,numpy
 from scipy import interpolate
 from scipy.interpolate import PPoly
 import matplotlib
@@ -110,6 +110,7 @@ class Pie(PPoly):
     """
     Create a new Pie object by restricting the range of the t variable to [t1,t2].
     """
+    self.assert_valid()
     n = len(self.x)
     # by default we need them all:
     lo_i = 0
@@ -122,10 +123,19 @@ class Pie(PPoly):
       if i>=0 and t2<self.x[i]: # [i,i+1] is too late to be needed
         hi_i = i
     result = copy.deepcopy(self)
-    result.x = result.x[lo_i:hi_i+1]
-    for i in range(len(self.c)):
-      result.c[i] = result.c[i][lo_i:hi_i]
+    result.x = result.x[lo_i:hi_i+1] # python's slice method is defined such that this copies indices lo_i through hi_i
+    # now make c the desired thing, which means it covers indices lo_i through hi_i-1
+    new_c = []
+    for row in result.c:
+      new_row = row[lo_i:hi_i]
+      new_c.append(new_row)
+    result.c = numpy.asarray(new_c, dtype=numpy.float)
+    result.assert_valid()
     return result
+
+  def assert_valid(self):
+    if self.x.shape[0]!=self.c.shape[1]+1:
+      raise Exception(f'shapes of x and c in {self} are not compatible, should have self.x.shape[0]=self.c.shape[1]+1')
 
   def __str__(self):
     result = ''
