@@ -28,7 +28,7 @@ def main():
 
   osc = Oscillator(n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials)
 
-  vib = vibrato.generate(100,3,5,7,1,[3,5,2,1],[3,5,2,1])
+  vib = vibrato.generate(100,3,3,6,0.7,[3,5,4,1],[1,8,4,1])
   p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0"))
   if False:
     p1 = Partial(
