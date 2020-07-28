@@ -36,7 +36,17 @@ def generate(fc,t,rate1,rate2,width,shape_r,shape_w):
     if te>t:
       continue
     tn.append(te)
-  print(tn)  
+  fn = [] # array containing frequencies at extrema
+  for n in range(len(tn)):
+    te = tn[n] # time of nth extremum  
+    if n%2==0:
+      sgn = 1.0
+    else:
+      sgn = -1.0
+    fn.append(fc+env_w(te)*sgn)
+  print("tn=",tn)
+  #print(env_w(1.5))
+  print("fn=",fn)
 
 # test code, to be removed later
 

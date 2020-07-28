@@ -7,6 +7,7 @@ A subclass of scipy's PPoly class with some extra features:
   - cat and join methods
   - graphing
   - window
+  - join_extrema
 """
 
 
@@ -167,7 +168,15 @@ class Pie(PPoly):
     t[] should have 6 elements.
     """
     y = [y1,y1,y2,y2,y1,y1]
+    return Pie.join_extrema(t,y)
+
+  @classmethod
+  def join_extrema(cls,t,y):
+    """
+    Inputs data points (t1,y1), (t2,y2), ..., which are taken as extrema of a smooth curve.
+    Outputs a piecewise polynomial consisting of clamped cubic splines connecting these points.
+    """
     p = []
-    for i in range(5):
+    for i in range(len(t)-1):
       p.append(Pie(scipy.interpolate.CubicSpline([t[i],t[i+1]],[y[i],y[i+1]],bc_type='clamped')))
     return Pie.join(p)
