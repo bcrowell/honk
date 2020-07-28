@@ -23,17 +23,20 @@ def generate(fc,t,rate1,rate2,width,shape_r,shape_w):
   df = (2.0**(0.5*width/12.0)-1)*fc
   env_r = Pie.window([0,shape_r[0]*tv,shape_r[1]*tv,t-shape_r[2]*tv,t-shape_r[3]*tv,t],rate1,rate2)
   env_w = Pie.window([0,shape_w[0]*tv,shape_w[1]*tv,t-shape_w[2]*tv,t-shape_w[3]*tv,t],0,df)
-  max_n = int(t/tv)+3 # conservative upper estimate of how many vib cycles we can have
+  max_n = 2*(int(t/tv)+3) # conservative upper estimate of how many vib cycles we can have
   phase = env_r.antiderivative().scalar_mult(2.0*math.pi)
-  tn = []
+  tn = [] # array containing times of (approximated) extrema
   for n in range(max_n):
     roots = phase.solve(n*math.pi)
     if len(tn)>0 and len(roots)==0:
       continue
     if len(roots)>1:
       raise Exception("non-unique root for phase in vibrato")
-    tn.append(roots[0])
-  print("tn=",tn)
+    te = roots[0] # time of nth extremum
+    if te>t:
+      continue
+    tn.append(te)
+  print(tn)  
 
 # test code, to be removed later
 
