@@ -8,7 +8,7 @@
 
 // When changing one of the following, need to do a "make cpu_c.so".
 
-#define MAX_SPLINE_KNOTS 200
+#define MAX_SPLINE_KNOTS 300
 #define A_SPLINE_ORDER 3
 #define PHASE_SPLINE_ORDER 4
 #define MAX_SPLINE_COEFFS (MAX_SPLINE_KNOTS*(PHASE_SPLINE_ORDER+1))

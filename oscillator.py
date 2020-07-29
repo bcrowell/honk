@@ -1,14 +1,35 @@
-import numpy,functools,scipy,math
+import numpy,functools,scipy,math,ctypes
 from scipy import interpolate
+import pyopencl as cl
+
 
 class Oscillator:
-  def __init__(self,n_samples,max_spline_knots,spline_order,max_spline_coeffs,max_partials):
-    self.max_spline_knots = max_spline_knots
-    self.spline_order = spline_order
-    self.max_spline_coeffs = max_spline_coeffs
-    self.max_partials = max_partials
+  cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
+  MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS = (cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),
+                                                                  cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3))
+  def __init__(self,pars):
+    self.os = [OscillatorLowLevel(pars)]
+
+  def error_code(self):
+    return self.os[0].error_code()
+
+  def setup(self,partials):
+    return self.os[0].setup(partials)
+
+  def __str__(self):
+    return str(self.os[0])
+
+  def run(self,dev,n_instances,local_size):
+    self.os[0].run(dev,n_instances,local_size)
+
+  def y(self): # results of synthesis
+    return self.os[0].y
+
+class OscillatorLowLevel:
+  def __init__(self,pars):
+    self.n_samples,self.samples_per_instance,self.t0,self.dt = (pars['n_samples'],pars['samples_per_instance'],pars['t0'],pars['dt'])
     # buffer to hold synthesized sound:
-    self.y = numpy.zeros(n_samples, numpy.float32)
+    self.y = numpy.zeros(self.n_samples, numpy.float32)
     # misc data structures:
     self.clear_small_arrays()
 
@@ -23,12 +44,12 @@ class Oscillator:
     self.err = numpy.zeros(1, numpy.int32)
     self.info = numpy.zeros(100, numpy.float32)
     self.n_info = numpy.zeros(1, numpy.int32)
-    self.phi_c = numpy.zeros(self.max_spline_coeffs, numpy.float32)
-    self.phi_knots = numpy.zeros(self.max_spline_knots, numpy.float32)
-    self.a_c = numpy.zeros(self.max_spline_coeffs, numpy.float32)
-    self.a_knots = numpy.zeros(self.max_spline_knots, numpy.float32)
-    self.phi_n = numpy.zeros(self.max_partials, numpy.int32)
-    self.a_n = numpy.zeros(self.max_partials, numpy.int32)
+    self.phi_c = numpy.zeros(Oscillator.MAX_SPLINE_COEFFS, numpy.float32)
+    self.phi_knots = numpy.zeros(Oscillator.MAX_SPLINE_KNOTS, numpy.float32)
+    self.a_c = numpy.zeros(Oscillator.MAX_SPLINE_COEFFS, numpy.float32)
+    self.a_knots = numpy.zeros(Oscillator.MAX_SPLINE_KNOTS, numpy.float32)
+    self.phi_n = numpy.zeros(Oscillator.MAX_PARTIALS, numpy.int32)
+    self.a_n = numpy.zeros(Oscillator.MAX_PARTIALS, numpy.int32)
     self.i_pars = numpy.zeros(100, numpy.int64)
     self.f_pars = numpy.zeros(100, numpy.float32)
 
@@ -36,8 +57,8 @@ class Oscillator:
     self.clear()
     self.partials = partials
     n_knots = len(functools.reduce(cat,list(map(lambda p:p.phi.x,partials))))
-    if n_knots>self.max_spline_knots:
-      raise Exception(f"too many phi knots, {n_knots}>{self.max_spline_knots}")
+    if n_knots>Oscillator.MAX_SPLINE_KNOTS:
+      raise Exception(f"too many phi knots, {n_knots}>{Oscillator.MAX_SPLINE_KNOTS}")
     # create flattened versions of input data for consumption by opencl
     two_pi = 2.0*math.pi
     copy_into_numpy_array(self.phi_knots,     functools.reduce(cat,list(map(lambda p:p.phi.x,partials))) )
@@ -68,6 +89,48 @@ class Oscillator:
     result = result + "a_knots = "+sa(self.a_knots)+"\n"
     result = result + "a_c = "+sa(self.a_c)+"\n"
     return result
+
+  def run(self,dev,n_instances,local_size):
+    if n_instances%local_size!=0:
+      raise Exception(f"local_size={local_size} is not a divisor of n_instances={n_instances}")
+
+    mem_flags = cl.mem_flags
+    context = dev.context
+    program = dev.program
+    queue = dev.queue
+    y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, self.y.nbytes) # This doesn't initialize it to 0, because write only.
+    err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.err)
+    info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.info)
+    n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.n_info)
+    phi_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.phi_c)
+    phi_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.phi_knots)
+    a_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.a_c)
+    a_knots_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.a_knots)
+    phi_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.phi_n)
+    a_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.a_n)
+    i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.i_pars)
+    f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.f_pars)
+
+    t1 = self.t0+self.dt*self.n_samples
+    if not (self.in_time_range(self.t0) and self.in_time_range(t1)):
+      raise Exception("illegal time range, t={self.t0} to {t1}, range={self.time_range()}")
+    self.f_pars[0] = self.t0
+    self.f_pars[1] = self.dt
+   
+    program.oscillator(queue, (n_instances,), (local_size,),
+                       y_buf,
+                       err_buf,info_buf,n_info_buf,
+                       phi_c_buf, phi_knots_buf, a_c_buf, a_knots_buf, phi_n_buf, a_n_buf,
+                       i_pars_buf,f_pars_buf)
+    # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
+    # This seems to be calling the __call__ method of a Kernel object, https://documen.tician.de/pyopencl/runtime_program.html
+    # Args are (queue,global_size,local_size,*args).
+    # global_size is size of m-dim rectangular grid, one work item launched for each point
+    # local_size is size of workgroup, must be an integer divisor of global_size
+   
+    cl.enqueue_copy(queue, self.err, err_buf)
+    cl.enqueue_copy(queue, self.y, y_buf)
+
 
 def sa(a):
   # make an array into a string, omitting trailing zeroes
