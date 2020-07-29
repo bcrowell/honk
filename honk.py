@@ -25,7 +25,7 @@ def main():
 
   osc = Oscillator({'n_samples':n_samples,'samples_per_instance':samples_per_instance,'t0':0.0,'dt':1/sample_freq})
 
-  vib = vibrato.generate(100,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
+  vib = vibrato.generate(1000,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
   p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0"))
   p2 = p1.scale_f(2).scale_a(1/math.sqrt(0.5))
   p3 = p1.scale_f(3).scale_a(1/math.sqrt(0.3))

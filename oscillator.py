@@ -116,6 +116,8 @@ class OscillatorLowLevel:
     i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.i_pars)
     f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.f_pars)
    
+    print("before calling, y=",self.y)
+
     program.oscillator(queue, (n_instances,), (local_size,),
                        y_buf,
                        err_buf,info_buf,n_info_buf,
@@ -126,9 +128,12 @@ class OscillatorLowLevel:
     # Args are (queue,global_size,local_size,*args).
     # global_size is size of m-dim rectangular grid, one work item launched for each point
     # local_size is size of workgroup, must be an integer divisor of global_size
-   
+
     cl.enqueue_copy(queue, self.err, err_buf)
     cl.enqueue_copy(queue, self.y, y_buf)
+
+    print("after calling, self.y=",self.y)
+
 
 
 def sa(a):
