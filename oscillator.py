@@ -69,6 +69,11 @@ class OscillatorLowLevel:
       p = partials[i]
       self.phi_n[i] = len(p.phi.x)
       self.a_n[i] = len(p.a.x)
+    t1 = self.t0+self.dt*self.n_samples
+    if not (self.in_time_range(self.t0) and self.in_time_range(t1)):
+      raise Exception("illegal time range, t={self.t0} to {t1}, range={self.time_range()}")
+    self.f_pars[0] = self.t0
+    self.f_pars[1] = self.dt
     self.i_pars[1] = len(partials)
 
   def time_range(self):
@@ -110,12 +115,6 @@ class OscillatorLowLevel:
     a_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.a_n)
     i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.i_pars)
     f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.f_pars)
-
-    t1 = self.t0+self.dt*self.n_samples
-    if not (self.in_time_range(self.t0) and self.in_time_range(t1)):
-      raise Exception("illegal time range, t={self.t0} to {t1}, range={self.time_range()}")
-    self.f_pars[0] = self.t0
-    self.f_pars[1] = self.dt
    
     program.oscillator(queue, (n_instances,), (local_size,),
                        y_buf,
