@@ -43,6 +43,7 @@ class OscillatorLowLevel:
 
   def clear_small_arrays(self):
     self.err = numpy.zeros(Oscillator.MAX_INSTANCES, numpy.int32)
+    self.error_details = numpy.zeros(Oscillator.MAX_INSTANCES*64, numpy.int32)
     self.info = numpy.zeros(100, numpy.float32)
     self.n_info = numpy.zeros(1, numpy.int32)
     self.phi_c = numpy.zeros(Oscillator.MAX_SPLINE_COEFFS, numpy.float32)
@@ -111,8 +112,9 @@ class OscillatorLowLevel:
 
     y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, self.y.nbytes) # This doesn't initialize it to 0, because write only.
     err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.err)
-    # Each instance gets its own 32-bit flag. It's write-only, which limits what the kernel can do. Each kernel starts by writing 0 to
-    # it. If there's an error, it overwrites that with a code that packs some error info in it.
+    # Each instance gets its own 32-bit ints for error reporting. These are write-only, which limits what the kernel can do.
+    # Each kernel starts by writing 0 to its flag. If there's an error, it overwrites that with a code that packs some error info in it.
+    error_details_buf  = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.error_details)
     info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.info)
     n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.n_info)
     phi_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.phi_c)
@@ -128,7 +130,7 @@ class OscillatorLowLevel:
 
     program.oscillator(queue, (n_instances,), (local_size,),
                        y_buf,
-                       err_buf,info_buf,n_info_buf,
+                       err_buf,error_details_buf,info_buf,n_info_buf,
                        phi_c_buf, phi_knots_buf, a_c_buf, a_knots_buf, phi_n_buf, a_n_buf,
                        i_pars_buf,f_pars_buf)
     # cf. clEnqueueNDRangeKernel , enqueue_nd_range_kernel 
@@ -138,6 +140,7 @@ class OscillatorLowLevel:
     # local_size is size of workgroup, must be an integer divisor of global_size
 
     cl.enqueue_copy(queue, self.err, err_buf)
+    cl.enqueue_copy(queue, self.error_details, error_details_buf)
     cl.enqueue_copy(queue, self.y, y_buf)
 
     have_errors = False
@@ -146,6 +149,10 @@ class OscillatorLowLevel:
         print(f"instance {i}, error={error_to_string(int(self.err[i]/1000))}, oscillator.cl line {self.err[i]%1000}")
         have_errors = True
     if have_errors:
+      nn = 987
+      print(f"nn={nn} samples_per_instance={self.samples_per_instance} err[nn]={self.err[nn]} y[nn]={self.y[nn]}")
+      k = 64*nn
+      print(f"  details: {self.error_details[k]}, {self.error_details[k+1]}, {self.error_details[k+2]}")
       raise Exception("dying with errors")
 
     print("after calling, self.y=",self.y)

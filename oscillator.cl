@@ -15,14 +15,14 @@
 
 #ifndef RUN_ON_CPU
 __kernel void oscillator(__global FLOAT *y,
-                         __global int *err, __global FLOAT *info,__global int *n_info,
+                         __global int *err, __global int *error_details, __global FLOAT *info,__global int *n_info,
                          __global const FLOAT *v1, __global const FLOAT *v2, __global const FLOAT *v3, __global const FLOAT *v4,
                          __global const int *k1,  __global const int *k2,
                          __global const long *i_pars, __global const FLOAT *f_pars
                           ) {
   int i = get_global_id(0); // index of the current element in the computational grid
   err[i] = 0; // see oscillator.py for info about how errors are handled
-  fn_osc(y,i,err,info,n_info,v1,v2,v3,v4,k1,k2,i_pars,f_pars);
+  fn_osc(y,i,err,error_details,info,n_info,v1,v2,v3,v4,k1,k2,i_pars,f_pars);
 }
 
 #endif
@@ -31,11 +31,13 @@ __kernel void oscillator(__global FLOAT *y,
 // ... see oscillator.py for info about how errors are handled
 
 void fn_osc(__global FLOAT *y,int i,
-                         __global int *err, __global FLOAT *info,__global int *n_info,
+                         __global int *err, __global int *error_details, __global FLOAT *info,__global int *n_info,
                          __global const FLOAT *v1, __global const FLOAT *v2,
                          __global const FLOAT *v3, __global const FLOAT *v4,
                          __global const int *k1,  __global const int *k2,
                          __global const long *i_pars, __global const FLOAT *f_pars) {
+  int j1;
+  int j2;
   __local int samples_per_instance;
   __local int n_partials;
   __local int n_samples;
@@ -92,13 +94,16 @@ void fn_osc(__global FLOAT *y,int i,
     k_phi += phi_size;
     k_a     += a_size;
   }
-  __local int j1;
-  __local int j2;
   j1 = i*samples_per_instance;
   j2 = (i+1)*samples_per_instance-1;
-  DEBUG(if (!(j1>=0 && j2>=0 && j2>j1)) {y[0]=i; y[1]=j1; y[2]= j2; ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;}) // sanity check
+  DEBUG(if (!(samples_per_instance>0)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
+  DEBUG(if (!(j1>=0)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
+  DEBUG(if (!(j2>=0)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
+  DEBUG(if (!(j2>=j1)) {set_flags(error_details,i,j1,j2,samples_per_instance); ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
+  DEBUG(if (!(j1>=0 && j2>=0 && j2>=j1 && samples_per_instance>0)) {set_flags(error_details,i,j1,(int) sizeof(j1),samples_per_instance); ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;}) // sanity check
+  DEBUG(if (!(j1>=0 && j2>=0 && j2>=j1)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;}) // sanity check
   DEBUG(if (j2>=n_samples) {ERR(err,i,HONK_ERR_INDEX_OUT_OF_RANGE); return;}) // sanity check
-  oscillator_cubic_spline(y,err,i,
+  oscillator_cubic_spline(y,err,error_details,i,
                           phi_c_local,phi_knots,phi_n,
                           a_c_local,    a_knots    ,a_n,
                           f_pars[0],f_pars[1],j1,j2,n_partials
@@ -106,7 +111,7 @@ void fn_osc(__global FLOAT *y,int i,
 }
 
 
-void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int instance,
+void oscillator_cubic_spline(__global FLOAT *y,__global int *err,__global int *error_details,int instance,
                              __local FLOAT *phi_c,__local FLOAT *phi_knots,__local int *phi_n,
                              __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
                              FLOAT t0,FLOAT dt,int j1,int j2,int n_partials) {
@@ -126,7 +131,7 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int instance,
     int a_i = 0;     // ... similar
     for (int j=j1; j<=j2; j++) {
       t = t0 + dt*j;
-      __local int local_err; 
+      int local_err; 
       phi = spline(this_phi_c,this_phi_knots,this_phi_n,PHASE_SPLINE_ORDER,&phi_i,t,&local_err);
       if (local_err) {ERR(err,instance,local_err); return;}
       DEBUG(if (isnan(this_a_knots[a_i])) {ERR(err,instance,HONK_ERR_NAN); return;})
@@ -156,7 +161,7 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int instance,
   On the first call, *i can be 0, and *i will then be updated automatically.
   Moving to the left past a knot results in an error unless the caller sets *i back to a lower value or 0.
 */
-FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,__local int *local_err) {
+FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,int *local_err) {
   // In the following code, the idea is that i=n-1 is not legal.
   DEBUG(if (*i<0 || *i>=n-1) {*local_err = HONK_ERR_INDEX_OUT_OF_RANGE; return NAN;})
   while (*i<=n-3 && x>knots[*i+1]) {(*i)++;} // i<n-3 means that i+1<n-1, which would be legal
@@ -174,6 +179,13 @@ FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,__
   }
   *local_err = 0;
   return s;
+}
+
+void set_flags(__global int *error_array,int instance,int f1,int f2,int f3) {
+  int k=instance*64;
+  error_array[k] = f1;
+  error_array[k+1] = f2;
+  error_array[k+2] = f3;
 }
 
 // See oscillator.py for info about how errors are handled.
