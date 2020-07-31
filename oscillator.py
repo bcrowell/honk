@@ -8,18 +8,16 @@ class Oscillator:
   cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
   MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS,MAX_INSTANCES = (
                cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
-  def __init__(self,pars):
+  def __init__(self,pars,partials):
     self.os = [OscillatorLowLevel(self,pars)]
+    for o in self.os:
+      o.setup(partials)
 
   def error_code(self):
     for o in self.os:
       if o.error_code()!=0:
         return o.error_code()
     return 0
-
-  def setup(self,partials):
-    for o in self.os:
-      return o.setup(partials)
 
   def __str__(self):
     s = ''
