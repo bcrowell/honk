@@ -17,8 +17,12 @@ def main():
   dev.build('oscillator.cl')
    
   length_sec = 3.0
-  n_instances = 1024
-  local_size = 64 # must divide n_instances
+  if False:
+    n_instances = 1024 
+    local_size = 64 # must divide n_instances
+  else:
+    n_instances = 1
+    local_size = 1
   sample_freq = 44100.0
   samples_per_instance = int(length_sec*sample_freq/n_instances)
   n_samples = n_instances*samples_per_instance

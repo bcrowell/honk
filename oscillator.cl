@@ -106,7 +106,7 @@ void fn_osc(__global FLOAT *y,int i,
 }
 
 
-void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int i,
+void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int instance,
                              __local FLOAT *phi_c,__local FLOAT *phi_knots,__local int *phi_n,
                              __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
                              FLOAT t0,FLOAT dt,int j1,int j2,int n_partials) {
@@ -128,10 +128,10 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int i,
       t = t0 + dt*j;
       __local int local_err; 
       phi = spline(this_phi_c,this_phi_knots,this_phi_n,PHASE_SPLINE_ORDER,&phi_i,t,&local_err);
-      if (local_err) {ERR(err,i,local_err); return;}
+      if (local_err) {ERR(err,instance,local_err); return;}
       DEBUG(if (isnan(this_a_knots[a_i])) {ERR(err,i,HONK_ERR_NAN); return;})
       a     = spline(this_a_c,    this_a_knots,    this_a_n,    A_SPLINE_ORDER,&a_i,    t,&local_err);
-      if (local_err) {ERR(err,i,local_err); return;}
+      if (local_err) {ERR(err,instance,local_err); return;}
       y[j] += a*sin(phi);  // fixme -- add in local memory, copy at end
     }
     this_phi_knots += this_phi_n;
@@ -143,10 +143,13 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int i,
 
 /*
   Evaluate a spline polynomial expressed as an array flattened from the format used by python's PPoly.
-  c[j] = flattened version of array c[m][i], with j=(n-1)m+i
+  c[j] = flattened version of array c[m][i], with j=(n-1)m+i 
+    This mimicks the weird way the python PPoly object stores the coefficients.
+    There are only n-1 polynomials, because polynomial i covers the interval to the right of x_i, and nothing is to the right of the last knot.
   knots[i] = x_i of the ith knot
   n = number of knots
   k = order of polynomial
+  m = k-exponent
   i = pointer to initial guess as to the i such that x_i <= x <=x_(i+1); not allowed to be too high, only too low; gets updated
   x = point at which to evaluate the spline
   This is designed to be called repeatedly on the same spline with values of x that are non-decreasing.
@@ -154,8 +157,9 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int i,
   Moving to the left past a knot results in an error unless the caller sets *i back to a lower value or 0.
 */
 FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,__local int *local_err) {
-  DEBUG(if (*i<0 || *i>n-3) {*local_err = HONK_ERR_INDEX_OUT_OF_RANGE; return NAN;})
-  while (*i<=n-3 && x>knots[*i+1]) {(*i)++;}
+  // In the following code, the idea is that i=n-1 is not legal.
+  DEBUG(if (*i<0 || *i>=n-1) {*local_err = HONK_ERR_INDEX_OUT_OF_RANGE; return NAN;})
+  while (*i<=n-3 && x>knots[*i+1]) {(*i)++;} // i<n-3 means that i+1<n-1, which would be legal
   FLOAT d = x-knots[*i];
   DEBUG(if (isnan(knots[*i])) {*local_err = HONK_ERR_NAN; return NAN;})
   if (d<0) {*local_err= HONK_ERR_ILLEGAL_VALUE; return 0.0;}
