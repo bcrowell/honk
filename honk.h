@@ -8,6 +8,10 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,__global int *e
                              __local FLOAT *omega_c,__local FLOAT *omega_knots,__local int *omega_n,
                              __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
                              FLOAT t0,FLOAT dt,int j1,int j2,int n_partials);
+void oscillator_cubic_spline_one_block(FLOAT *y,__global int *err,__global int *error_details,int instance,
+                             __local FLOAT *phi_c,__local FLOAT *phi_knots,__local int *phi_n,
+                             __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
+                             FLOAT t0,FLOAT dt,int j1,int j2,int n_partials);
 void fn_zeta(__global FLOAT *y,int i);
 FLOAT zeta(FLOAT s);
 void flag_err(__global int *error_array,int instance,int err,int where_in_code);

@@ -110,23 +110,44 @@ void fn_osc(__global FLOAT *y,int i,
 }
 
 
-#define BLOCK_SIZE 64
-// ... Has to be small enough so that we can have a private array of floats of this size.
-//     Bigger sizes are slightly more efficient.
 
+// For efficiency, break the calculation into small blocks, so that each block can fit in private memory.
+#define BLOCK_SIZE 64
+// ... Has to be small enough so that we can have a private array of floats of this size. Seems to run OK with values as big as 512.
+//     Bigger sizes are slightly more efficient. For a sound with 8 partials, a block size of 4 was significantly better than 1,
+//     but bigger sizes were no better. For sounds with a lot of partials, big block sizes are likely to help.
 void oscillator_cubic_spline(__global FLOAT *y,__global int *err,__global int *error_details,int instance,
+                             __local FLOAT *phi_c,__local FLOAT *phi_knots,__local int *phi_n,
+                             __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
+                             FLOAT t0,FLOAT dt,int j1,int j2,int n_partials) {
+  FLOAT y_private[BLOCK_SIZE];
+  int n_blocks = (j2-j1+1)/BLOCK_SIZE;
+  if (n_blocks*BLOCK_SIZE<j2-j1+1) {++n_blocks;}
+  for (int b=0; b<n_blocks; b++) {
+    int subj1,subj2;
+    subj1 = j1+b*BLOCK_SIZE;
+    subj2 = j1+(b+1)*BLOCK_SIZE-1;
+    if (subj2>j2) {subj2=j2;}
+    oscillator_cubic_spline_one_block(y_private,err,error_details,instance,phi_c,phi_knots,phi_n,a_c,a_knots,a_n,
+                                      t0+subj1*dt,dt,0,subj2-subj1,n_partials);
+    for (int j=subj1; j<=subj2; j++) {
+      y[j] = y_private[j-subj1];
+    }
+  }
+}
+
+void oscillator_cubic_spline_one_block(FLOAT *y,__global int *err,__global int *error_details,int instance,
                              __local FLOAT *phi_c,__local FLOAT *phi_knots,__local int *phi_n,
                              __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
                              FLOAT t0,FLOAT dt,int j1,int j2,int n_partials) {
   FLOAT phi,a,t;
   for (int j=j1; j<=j2; j++) {
-    y[j] = 0.0; // y is write-only, so it can't be initialized to zero for us
+    y[j] = 0.0;
   }
   int this_phi_c = 0;
   int this_a_c = 0;
   int this_phi_knots = 0;
   int this_a_knots = 0;
-  
   for (int m=0; m<n_partials; m++) {
     int this_phi_n = phi_n[m];
     int this_a_n = a_n[m];
@@ -139,7 +160,7 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,__global int *e
       if (local_err) {ERR(err,instance,local_err); return;}
       a     = spline(a_c+this_a_c,  a_knots+this_a_knots,    this_a_n,    A_SPLINE_ORDER,&a_i,    t,&local_err);
       if (local_err) {ERR(err,instance,local_err); return;}
-      y[j] += a*sin(phi);  // fixme -- add in local memory, copy at end
+      y[j] += a*sin(phi);
     }
     this_phi_knots += this_phi_n;
     this_a_knots     += this_a_n;
