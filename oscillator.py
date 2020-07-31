@@ -58,9 +58,10 @@ class OscillatorLowLevel:
   def setup(self,partials):
     self.clear()
     self.partials = partials
-    n_knots = len(functools.reduce(cat,list(map(lambda p:p.phi.x,partials))))
-    if n_knots>Oscillator.MAX_SPLINE_KNOTS:
-      raise Exception(f"too many phi knots, {n_knots}>{Oscillator.MAX_SPLINE_KNOTS}")
+    n_phi_knots = self.count_knots("phi")
+    n_a_knots = self.count_knots("a")
+    if n_phi_knots>Oscillator.MAX_SPLINE_KNOTS or n_a_knots>Oscillator.MAX_SPLINE_KNOTS:
+      raise Exception(f"too many knots, {n_phi_knots} phi or {n_a_knots} A greater than {Oscillator.MAX_SPLINE_KNOTS}")
     # create flattened versions of input data for consumption by opencl
     two_pi = 2.0*math.pi
     copy_into_numpy_array(self.phi_knots,     functools.reduce(cat,list(map(lambda p:p.phi.x,partials))) )
@@ -79,6 +80,13 @@ class OscillatorLowLevel:
     self.i_pars[0] = self.samples_per_instance
     self.i_pars[1] = len(partials)
     self.i_pars[2] = self.n_samples
+
+  def count_knots(self,which):
+    if which=="phi":
+      l = lambda p:p.phi.x
+    else:
+      l = lambda p:p.a.x
+    return len(functools.reduce(cat,list(map(l,self.partials))))
 
   def time_range(self):
     a,b = self.partials[0].time_range()

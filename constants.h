@@ -19,4 +19,4 @@
 #define PHASE_SPLINE_ORDER 4
 #define MAX_SPLINE_COEFFS (MAX_SPLINE_KNOTS*(PHASE_SPLINE_ORDER+1))
 // ... total number of cubic spline coefficients in all partials
-#define MAX_PARTIALS 16
+#define MAX_PARTIALS 64
