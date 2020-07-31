@@ -3,8 +3,10 @@
 #define HONK_ERR_TOO_MANY_PARTIALS 3
 #define HONK_ERR_TOO_MANY_KNOTS_IN_SPLINE 4
 #define HONK_ERR_NAN 5
-#define HONK_INDEX_OUT_OF_RANGE 6
-#define HONK_ILLEGAL_VALUE 7
+#define HONK_ERR_INDEX_OUT_OF_RANGE 6
+#define HONK_ERR_ILLEGAL_VALUE 7
+
+// ... if changing these, also change oscillator,py, error_to_string()
 
 // When changing one of the following, need to do a "make cpu_c.so".
 

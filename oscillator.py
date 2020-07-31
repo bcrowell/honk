@@ -143,13 +143,16 @@ class OscillatorLowLevel:
     have_errors = False
     for i in range(n_instances):
       if self.err[i]!=0:
-        print(f"instance {i}, error={self.err[i]}")
+        print(f"instance {i}, error={error_to_string(int(self.err[i]/1000))}, oscillator.cl line {self.err[i]%1000}")
         have_errors = True
     raise Exception("dying with errors")
 
     print("after calling, self.y=",self.y)
 
-
+def error_to_string(n):
+  return {1:"undefined function",2:"spline too large",3:"too many partials",4:"too many knots in spline",
+          5:"unexpected NaN",6:"index out of range",7:"illegal value"}[n]
+  # ... defined in constants.h
 
 def sa(a):
   # make an array into a string, omitting trailing zeroes

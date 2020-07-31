@@ -2,7 +2,12 @@
 #include <math.h>
 #endif
 
-#define DEBUG 1
+#define DO_DEBUGGING 1
+#if DO_DEBUGGING
+#define DEBUG(x) x
+#else
+#define DEBUG(x)
+#endif
 
 #include "gpu.h"
 #include "honk.h"
@@ -44,9 +49,7 @@ void fn_osc(__global FLOAT *y,int i,
   __local FLOAT a_knots[MAX_SPLINE_KNOTS];
   __local FLOAT phi_c_local[MAX_SPLINE_COEFFS];
   __local FLOAT a_c_local[MAX_SPLINE_COEFFS];
-#if DEBUG
-  if (!(samples_per_instance>0 && n_partials>0)) {ERR(err,i,HONK_ILLEGAL_VALUE); return;} // sanity check
-#endif
+  DEBUG(if (!(samples_per_instance>0 && n_partials>0)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;}) // sanity check
   // ---- copy number of knots
   if (n_partials>MAX_PARTIALS) {ERR(err,i,HONK_ERR_TOO_MANY_PARTIALS); return;}
   for (int m=0; m<n_partials; m++) {
@@ -62,9 +65,7 @@ void fn_osc(__global FLOAT *y,int i,
     int this_a_n = a_n[m];
     if (k_phi+this_phi_n>MAX_SPLINE_KNOTS || k_a+this_a_n>MAX_SPLINE_KNOTS) {ERR(err,i,HONK_ERR_TOO_MANY_KNOTS_IN_SPLINE); return;}
     for (int j=0; j<this_phi_n; j++) {
-#if DEBUG
-      if (k_phi+j>MAX_SPLINE_KNOTS) {ERR(err,i,HONK_INDEX_OUT_OF_RANGE);return;}
-#endif
+      DEBUG(if (k_phi+j>MAX_SPLINE_KNOTS) {ERR(err,i,HONK_ERR_INDEX_OUT_OF_RANGE);return;})
       phi_knots[k_phi+j] = v2[k_phi+j];
     }
     for (int j=0; j<this_a_n; j++) {
@@ -95,10 +96,8 @@ void fn_osc(__global FLOAT *y,int i,
   __local int j2;
   j1 = i*samples_per_instance;
   j2 = (i+1)*samples_per_instance-1;
-#if DEBUG
-  if (!(j1>=0 && j2>=0 && j2>j1)) {y[0]=i; y[1]=j1; y[2]= j2; ERR(err,i,HONK_ILLEGAL_VALUE); return;} // sanity check
-  if (j2>=n_samples) {ERR(err,i,HONK_INDEX_OUT_OF_RANGE); return;} // sanity check}
-#endif
+  DEBUG(if (!(j1>=0 && j2>=0 && j2>j1)) {y[0]=i; y[1]=j1; y[2]= j2; ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;}) // sanity check
+  DEBUG(if (j2>=n_samples) {ERR(err,i,HONK_ERR_INDEX_OUT_OF_RANGE); return;}) // sanity check
   oscillator_cubic_spline(y,err,i,
                           phi_c_local,phi_knots,phi_n,
                           a_c_local,    a_knots    ,a_n,
@@ -130,9 +129,7 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int i,
       __local int local_err; 
       phi = spline(this_phi_c,this_phi_knots,this_phi_n,PHASE_SPLINE_ORDER,&phi_i,t,&local_err);
       if (local_err) {ERR(err,i,local_err); return;}
-#if DEBUG
-      if (isnan(this_a_knots[a_i])) {ERR(err,i,HONK_ERR_NAN); return;}
-#endif
+      DEBUG(if (isnan(this_a_knots[a_i])) {ERR(err,i,HONK_ERR_NAN); return;})
       a     = spline(this_a_c,    this_a_knots,    this_a_n,    A_SPLINE_ORDER,&a_i,    t,&local_err);
       if (local_err) {ERR(err,i,local_err); return;}
       y[j] += a*sin(phi);  // fixme -- add in local memory, copy at end
@@ -157,15 +154,11 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int i,
   Moving to the left past a knot results in an error unless the caller sets *i back to a lower value or 0.
 */
 FLOAT spline(__local FLOAT *c,__local FLOAT *knots,int n,int k,int *i,FLOAT x,__local int *local_err) {
-#if DEBUG
-  if (*i<0 || *i>n-3) {*local_err = HONK_INDEX_OUT_OF_RANGE; return NAN;}
-#endif
+  DEBUG(if (*i<0 || *i>n-3) {*local_err = HONK_ERR_INDEX_OUT_OF_RANGE; return NAN;})
   while (*i<=n-3 && x>knots[*i+1]) {(*i)++;}
   FLOAT d = x-knots[*i];
-#if DEBUG
-  if (isnan(knots[*i])) {*local_err = HONK_ERR_NAN; return NAN;}
-#endif
-  if (d<0) {*local_err= HONK_ILLEGAL_VALUE; return 0.0;}
+  DEBUG(if (isnan(knots[*i])) {*local_err = HONK_ERR_NAN; return NAN;})
+  if (d<0) {*local_err= HONK_ERR_ILLEGAL_VALUE; return 0.0;}
   FLOAT p = 1.0; // (x-x_i)^k-m
   int j = (n-1)*k+*i;
   FLOAT s = 0.0;
