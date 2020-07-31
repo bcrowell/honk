@@ -9,13 +9,14 @@ class Oscillator:
   MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS,MAX_INSTANCES = (
                cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
   def __init__(self,pars,partials):
+    print(f"Oscillator {pars['t0']},{pars['t0']+pars['n_samples']*pars['dt']}") # qwe
     if self.too_big_horizontally(partials):
       n,t0,dt = (pars['n_samples'],pars['t0'],pars['dt'])
       if n==0:
         raise Exception("recursion failed to bottom out")
       nn = [0,0]
       nn[0] = int(n/2)
-      nn[1] = n-n1
+      nn[1] = n-nn[0]
       subs = []
       for i in range(2):
         sub_pars = copy.deepcopy(pars)
@@ -24,14 +25,17 @@ class Oscillator:
           sub_t0 = t0
         else:
           sub_t0 = t0+nn[0]*dt
-        sub_t1 = (t0+nn[i]-1)*dt
+        sub_t1 = sub_t0+(nn[i]-1)*dt
         sub_pars['t0'] = sub_t0
         sub_partials = []
         for p in partials:
-          sub_partials.append(p.restrict(t0,t1))
+          sub_partials.append(p.restrict(sub_t0,sub_t1))
         subs.append(Oscillator(sub_pars,sub_partials))
+        print(f" ... returned from recursion {i}") # qwe
+      print(f" ... created both recursions") # qwe
       return subs[0].cat(subs[1])
     # If we get to here, we didn't need to recurse.
+    print(f" ... bottomed out on {pars['t0']},{pars['t0']+pars['n_samples']*pars['dt']}") # qwe
     self.os = [OscillatorLowLevel(self,pars)]
     for o in self.os:
       o.setup(partials)
@@ -61,6 +65,7 @@ class Oscillator:
   def too_big_horizontally(self,partials):
     n_phi_knots = self.count_knots(partials,"phi")
     n_a_knots = self.count_knots(partials,"a")
+    return (n_phi_knots>200 or n_a_knots>200) # qwe
     return (n_phi_knots>Oscillator.MAX_SPLINE_KNOTS or n_a_knots>Oscillator.MAX_SPLINE_KNOTS)
 
   def count_knots(self,partials,which):
@@ -120,7 +125,7 @@ class OscillatorLowLevel:
       self.a_n[i] = len(p.a.x)
     t1 = self.t0+self.dt*self.n_samples
     if not (self.in_time_range(self.t0) and self.in_time_range(t1)):
-      raise Exception("illegal time range, t={self.t0} to {t1}, range={self.time_range()}")
+      raise Exception(f"illegal time range, t={self.t0} to {t1} is not within time range of partials, which is {self.time_range()}")
     self.f_pars[0] = self.t0
     self.f_pars[1] = self.dt
     self.i_pars[0] = self.samples_per_instance
