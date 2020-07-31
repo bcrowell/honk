@@ -8,6 +8,10 @@
 
 // When changing one of the following, need to do a "make cpu_c.so".
 
+#define MAX_INSTANCES 65536
+/* ... used to set size of error return array; this is in global memory, which is plentiful, so not much harm in making it much bigger than the
+       number of instances ewe actually expect to have
+*/
 #define MAX_SPLINE_KNOTS 300
 #define A_SPLINE_ORDER 3
 #define PHASE_SPLINE_ORDER 4

@@ -5,10 +5,10 @@ import pyopencl as cl
 
 class Oscillator:
   cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
-  MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS = (cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),
-                                                                  cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3))
+  MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS,MAX_INSTANCES = (
+               cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
   def __init__(self,pars):
-    self.os = [OscillatorLowLevel(pars)]
+    self.os = [OscillatorLowLevel(self,pars)]
 
   def error_code(self):
     return self.os[0].error_code()
@@ -26,7 +26,8 @@ class Oscillator:
     return self.os[0].y
 
 class OscillatorLowLevel:
-  def __init__(self,pars):
+  def __init__(self,parent,pars):
+    self.parent = parent
     self.n_samples,self.samples_per_instance,self.t0,self.dt = (pars['n_samples'],pars['samples_per_instance'],pars['t0'],pars['dt'])
     # buffer to hold synthesized sound:
     self.y = numpy.zeros(self.n_samples, numpy.float32)
@@ -41,7 +42,7 @@ class OscillatorLowLevel:
     self.clear_small_arrays()
 
   def clear_small_arrays(self):
-    self.err = numpy.zeros(1, numpy.int32)
+    self.err = numpy.zeros(Oscillator.MAX_INSTANCES, numpy.int32)
     self.info = numpy.zeros(100, numpy.float32)
     self.n_info = numpy.zeros(1, numpy.int32)
     self.phi_c = numpy.zeros(Oscillator.MAX_SPLINE_COEFFS, numpy.float32)
@@ -74,7 +75,9 @@ class OscillatorLowLevel:
       raise Exception("illegal time range, t={self.t0} to {t1}, range={self.time_range()}")
     self.f_pars[0] = self.t0
     self.f_pars[1] = self.dt
+    self.i_pars[0] = self.samples_per_instance
     self.i_pars[1] = len(partials)
+    self.i_pars[2] = self.n_samples
 
   def time_range(self):
     a,b = self.partials[0].time_range()
@@ -98,13 +101,18 @@ class OscillatorLowLevel:
   def run(self,dev,n_instances,local_size):
     if n_instances%local_size!=0:
       raise Exception(f"local_size={local_size} is not a divisor of n_instances={n_instances}")
+    if n_instances>self.parent.MAX_INSTANCES:
+      raise Exception(f"n_instances={n_instances} is greater than {self.parent.MAX_INSTANCES}")
 
     mem_flags = cl.mem_flags
     context = dev.context
     program = dev.program
     queue = dev.queue
+
     y_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, self.y.nbytes) # This doesn't initialize it to 0, because write only.
     err_buf = cl.Buffer(context, mem_flags.WRITE_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.err)
+    # Each instance gets its own 32-bit flag. It's write-only, which limits what the kernel can do. Each kernel starts by writing 0 to
+    # it. If there's an error, it overwrites that with a code that packs some error info in it.
     info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.info)
     n_info_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.n_info)
     phi_c_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.phi_c)
@@ -131,6 +139,13 @@ class OscillatorLowLevel:
 
     cl.enqueue_copy(queue, self.err, err_buf)
     cl.enqueue_copy(queue, self.y, y_buf)
+
+    have_errors = False
+    for i in range(n_instances):
+      if self.err[i]!=0:
+        print(f"instance {i}, error={self.err[i]}")
+        have_errors = True
+    raise Exception("dying with errors")
 
     print("after calling, self.y=",self.y)
 
