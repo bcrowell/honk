@@ -145,7 +145,8 @@ class OscillatorLowLevel:
       if self.err[i]!=0:
         print(f"instance {i}, error={error_to_string(int(self.err[i]/1000))}, oscillator.cl line {self.err[i]%1000}")
         have_errors = True
-    raise Exception("dying with errors")
+    if have_errors:
+      raise Exception("dying with errors")
 
     print("after calling, self.y=",self.y)
 
