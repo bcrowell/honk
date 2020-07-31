@@ -129,7 +129,7 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,int instance,
       __local int local_err; 
       phi = spline(this_phi_c,this_phi_knots,this_phi_n,PHASE_SPLINE_ORDER,&phi_i,t,&local_err);
       if (local_err) {ERR(err,instance,local_err); return;}
-      DEBUG(if (isnan(this_a_knots[a_i])) {ERR(err,i,HONK_ERR_NAN); return;})
+      DEBUG(if (isnan(this_a_knots[a_i])) {ERR(err,instance,HONK_ERR_NAN); return;})
       a     = spline(this_a_c,    this_a_knots,    this_a_n,    A_SPLINE_ORDER,&a_i,    t,&local_err);
       if (local_err) {ERR(err,instance,local_err); return;}
       y[j] += a*sin(phi);  // fixme -- add in local memory, copy at end
