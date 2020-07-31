@@ -1,4 +1,4 @@
-import numpy,functools,scipy,math,ctypes,sys,functools
+import numpy,functools,scipy,math,ctypes,sys,functools,copy
 from scipy import interpolate
 import pyopencl as cl
 
@@ -9,6 +9,29 @@ class Oscillator:
   MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS,MAX_INSTANCES = (
                cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
   def __init__(self,pars,partials):
+    if self.too_big_horizontally(partials):
+      n,t0,dt = (pars['n_samples'],pars['t0'],pars['dt'])
+      if n==0:
+        raise Exception("recursion failed to bottom out")
+      nn = [0,0]
+      nn[0] = int(n/2)
+      nn[1] = n-n1
+      subs = []
+      for i in range(2):
+        sub_pars = copy.deepcopy(pars)
+        sub_pars['n_samples'] = nn[i]
+        if i==0:
+          sub_t0 = t0
+        else:
+          sub_t0 = t0+nn[0]*dt
+        sub_t1 = (t0+nn[i]-1)*dt
+        sub_pars['t0'] = sub_t0
+        sub_partials = []
+        for p in partials:
+          sub_partials.append(p.restrict(t0,t1))
+        subs.append(Oscillator(sub_pars,sub_partials))
+      return subs[0].cat(subs[1])
+    # If we get to here, we didn't need to recurse.
     self.os = [OscillatorLowLevel(self,pars)]
     for o in self.os:
       o.setup(partials)
@@ -46,6 +69,10 @@ class Oscillator:
     else:
       l = lambda p:p.a.x
     return len(functools.reduce(cat,list(map(l,partials))))
+
+  def cat(self,osc):
+    # concatenate two oscillators
+    self.os.extend(osc.os)
 
 class OscillatorLowLevel:
   def __init__(self,parent,pars):

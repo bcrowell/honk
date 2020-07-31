@@ -7,7 +7,7 @@ class Partial:
     f and a are Pie objects
     """
     self.a = a
-    self.f = f # leave a copy here for things like graphing and debugging, but this is not actually used in computations
+    self.f = f # leave a copy here for things like graphing and debugging, but this is not actually used in computations; also used in restrict()
     self.phi = f.scalar_mult(math.pi*2.0).antiderivative()
     # ... Convert cycles/s to radians/s, then integrate. This should result in a fourth-order polynomial representing the phase phi(t).
     if self.a.order()!=3:
@@ -28,3 +28,6 @@ class Partial:
     result = copy.deepcopy(self)
     result.a = result.a.scalar_mult(s)
     return result
+
+  def restrict(self,t1,t2):
+    return Partial(self.f.restrict(t1,t2),self.a.restrict(t1,t2))
