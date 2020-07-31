@@ -48,7 +48,7 @@ def main():
     sys.exit(" ******* exiting with an error **********")
   print("wall-lock time for computation = ",(timer_end-timer_start)*1000,"ms")
   y = osc.y()
-  print(y)
+  #print(y)
 
   write_file('a.wav',y,n_samples,sample_freq)
 

@@ -3,6 +3,7 @@ from scipy import interpolate
 import pyopencl as cl
 
 
+
 class Oscillator:
   cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
   MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS,MAX_INSTANCES = (
@@ -11,19 +12,42 @@ class Oscillator:
     self.os = [OscillatorLowLevel(self,pars)]
 
   def error_code(self):
-    return self.os[0].error_code()
+    for o in self.os:
+      if o.error_code()!=0:
+        return o.error_code()
+    return 0
 
   def setup(self,partials):
-    return self.os[0].setup(partials)
+    for o in self.os:
+      return o.setup(partials)
 
   def __str__(self):
-    return str(self.os[0])
+    s = ''
+    for o in self.os:
+      s = s + str(o)
+    return s
 
   def run(self,dev,n_instances,local_size):
-    self.os[0].run(dev,n_instances,local_size)
+    for o in self.os:
+      o.run(dev,n_instances,local_size)
 
   def y(self): # results of synthesis
-    return self.os[0].y
+    yy = []
+    for o in self.os:
+      yy.extend(o.y)
+    return yy
+
+  def too_big_horizontally(self,partials):
+    n_phi_knots = self.count_knots(partials,"phi")
+    n_a_knots = self.count_knots(partials,"a")
+    return (n_phi_knots>Oscillator.MAX_SPLINE_KNOTS or n_a_knots>Oscillator.MAX_SPLINE_KNOTS)
+
+  def count_knots(self,partials,which):
+    if which=="phi":
+      l = lambda p:p.phi.x
+    else:
+      l = lambda p:p.a.x
+    return len(functools.reduce(cat,list(map(l,partials))))
 
 class OscillatorLowLevel:
   def __init__(self,parent,pars):
@@ -33,6 +57,7 @@ class OscillatorLowLevel:
     self.y = numpy.zeros(self.n_samples, numpy.float32)
     # misc data structures:
     self.clear_small_arrays()
+    self.my_errors = 0
 
   def error_code(self):
     return self.err[0]
@@ -58,10 +83,6 @@ class OscillatorLowLevel:
   def setup(self,partials):
     self.clear()
     self.partials = partials
-    n_phi_knots = self.count_knots("phi")
-    n_a_knots = self.count_knots("a")
-    if n_phi_knots>Oscillator.MAX_SPLINE_KNOTS or n_a_knots>Oscillator.MAX_SPLINE_KNOTS:
-      raise Exception(f"too many knots, {n_phi_knots} phi or {n_a_knots} A greater than {Oscillator.MAX_SPLINE_KNOTS}")
     # create flattened versions of input data for consumption by opencl
     two_pi = 2.0*math.pi
     copy_into_numpy_array(self.phi_knots,     functools.reduce(cat,list(map(lambda p:p.phi.x,partials))) )
@@ -80,13 +101,6 @@ class OscillatorLowLevel:
     self.i_pars[0] = self.samples_per_instance
     self.i_pars[1] = len(partials)
     self.i_pars[2] = self.n_samples
-
-  def count_knots(self,which):
-    if which=="phi":
-      l = lambda p:p.phi.x
-    else:
-      l = lambda p:p.a.x
-    return len(functools.reduce(cat,list(map(l,self.partials))))
 
   def time_range(self):
     a,b = self.partials[0].time_range()
@@ -163,7 +177,7 @@ class OscillatorLowLevel:
         print(f"  details: {self.error_details[k]}, {self.error_details[k+1]}, {self.error_details[k+2]}")
         have_errors = True
     if have_errors:
-      raise Exception("dying with errors")
+      self.my_errors = 1
 
 def error_to_string(n):
   return {1:"undefined function",2:"spline too large",3:"too many partials",4:"too many knots in spline",
