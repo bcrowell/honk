@@ -110,6 +110,10 @@ void fn_osc(__global FLOAT *y,int i,
 }
 
 
+#define BLOCK_SIZE 64
+// ... Has to be small enough so that we can have a private array of floats of this size.
+//     Bigger sizes are slightly more efficient.
+
 void oscillator_cubic_spline(__global FLOAT *y,__global int *err,__global int *error_details,int instance,
                              __local FLOAT *phi_c,__local FLOAT *phi_knots,__local int *phi_n,
                              __local FLOAT *a_c,    __local FLOAT *a_knots,    __local int *a_n,
@@ -118,10 +122,11 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,__global int *e
   for (int j=j1; j<=j2; j++) {
     y[j] = 0.0; // y is write-only, so it can't be initialized to zero for us
   }
-  __local FLOAT *this_phi_c = phi_c;
-  __local FLOAT *this_a_c     = a_c;
-  __local FLOAT *this_phi_knots = phi_knots;
-  __local FLOAT *this_a_knots = a_knots;
+  int this_phi_c = 0;
+  int this_a_c = 0;
+  int this_phi_knots = 0;
+  int this_a_knots = 0;
+  
   for (int m=0; m<n_partials; m++) {
     int this_phi_n = phi_n[m];
     int this_a_n = a_n[m];
@@ -130,10 +135,9 @@ void oscillator_cubic_spline(__global FLOAT *y,__global int *err,__global int *e
     for (int j=j1; j<=j2; j++) {
       t = t0 + dt*j;
       int local_err; 
-      phi = spline(this_phi_c,this_phi_knots,this_phi_n,PHASE_SPLINE_ORDER,&phi_i,t,&local_err);
+      phi = spline(phi_c+this_phi_c,phi_knots+this_phi_knots,this_phi_n,PHASE_SPLINE_ORDER,&phi_i,t,&local_err);
       if (local_err) {ERR(err,instance,local_err); return;}
-      DEBUG(if (isnan(this_a_knots[a_i])) {ERR(err,instance,HONK_ERR_NAN); return;})
-      a     = spline(this_a_c,    this_a_knots,    this_a_n,    A_SPLINE_ORDER,&a_i,    t,&local_err);
+      a     = spline(a_c+this_a_c,  a_knots+this_a_knots,    this_a_n,    A_SPLINE_ORDER,&a_i,    t,&local_err);
       if (local_err) {ERR(err,instance,local_err); return;}
       y[j] += a*sin(phi);  // fixme -- add in local memory, copy at end
     }
