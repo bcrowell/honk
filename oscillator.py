@@ -1,4 +1,4 @@
-import numpy,functools,scipy,math,ctypes
+import numpy,functools,scipy,math,ctypes,sys,functools
 from scipy import interpolate
 import pyopencl as cl
 
@@ -125,9 +125,13 @@ class OscillatorLowLevel:
     a_n_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.a_n)
     i_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.i_pars)
     f_pars_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=self.f_pars)
-   
-    print("before calling, y=",self.y)
 
+    # Estimate total size of all global arrays that will be copied to local memory:
+    to_local = [phi_n_buf,a_n_buf,phi_knots_buf,phi_c_buf,a_c_buf]
+    tot_local_per_instance = functools.reduce(lambda a,b:a+b,list(map(lambda x:sys.getsizeof(x),to_local)))
+    workgroup_size = n_instances/local_size
+    print(f"estimated total size of local arrays: {tot_local_per_instance*workgroup_size/1024.0} kb per workgroup")
+   
     program.oscillator(queue, (n_instances,), (local_size,),
                        y_buf,
                        err_buf,error_details_buf,info_buf,n_info_buf,
@@ -147,15 +151,11 @@ class OscillatorLowLevel:
     for i in range(n_instances):
       if self.err[i]!=0:
         print(f"instance {i}, error={error_to_string(int(self.err[i]/1000))}, oscillator.cl line {self.err[i]%1000}")
+        k = 64*i
+        print(f"  details: {self.error_details[k]}, {self.error_details[k+1]}, {self.error_details[k+2]}")
         have_errors = True
     if have_errors:
-      nn = 987
-      print(f"nn={nn} samples_per_instance={self.samples_per_instance} err[nn]={self.err[nn]} y[nn]={self.y[nn]}")
-      k = 64*nn
-      print(f"  details: {self.error_details[k]}, {self.error_details[k+1]}, {self.error_details[k+2]}")
       raise Exception("dying with errors")
-
-    print("after calling, self.y=",self.y)
 
 def error_to_string(n):
   return {1:"undefined function",2:"spline too large",3:"too many partials",4:"too many knots in spline",

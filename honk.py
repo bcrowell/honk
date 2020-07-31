@@ -17,12 +17,8 @@ def main():
   dev.build('oscillator.cl')
    
   length_sec = 3.0
-  if False:
-    n_instances = 1024 
-    local_size = 64 # must divide n_instances
-  else:
-    n_instances = 1024
-    local_size = 64
+  n_instances = 256 # larger values cause mysterious behavior that smells like corrupted memory or instances modifying each other's memory
+  local_size = 64 # must divide n_instances, and my video card prefers it to be at least 32
   sample_freq = 44100.0
   samples_per_instance = int(length_sec*sample_freq/n_instances)
   n_samples = n_instances*samples_per_instance
