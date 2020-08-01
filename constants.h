@@ -15,6 +15,7 @@
        number of instances ewe actually expect to have
 */
 #define MAX_SPLINE_KNOTS 300
+// ... total in all partials
 #define A_SPLINE_ORDER 3
 #define PHASE_SPLINE_ORDER 4
 #define MAX_SPLINE_COEFFS (MAX_SPLINE_KNOTS*(PHASE_SPLINE_ORDER+1))

@@ -3,16 +3,64 @@ from scipy import interpolate
 import pyopencl as cl
 
 
-
 class Oscillator:
+  """
+  A list of OscillatorSeq objects that are simultaneous and need to be added at the end.
+  """
   cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
   MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS,MAX_INSTANCES = (
                cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
   def __init__(self,pars,partials):
     # pars should contain keys n_samples, n_instances, t0, and dt
-    force_split_for_testing = False
-    # force_split_for_testing = pars['n_samples']>44100*1.5
-    if self.too_big_horizontally(partials) or force_split_for_testing:
+    maxp = Oscillator.MAX_PARTIALS
+    n_sets = int(len(partials)/maxp)
+    if n_sets*maxp<len(partials):
+      n_sets += 1
+    self.oseqs = []
+    for j in range(n_sets):
+      this_set = []
+      k1 = j*maxp
+      k2 = (j+1)*maxp-1
+      if k2>len(partials)-1:
+        k2=len(partials)-1
+      for k in range(k1,k2+1): # range doesn't include upper arg, so add 1
+        this_set.append(partials[k])
+      self.oseqs.append(OscillatorSeq(pars,this_set))
+
+  def error_code(self):
+    for o in self.oseqs:
+      if o.error_code()!=0:
+        return o.error_code()
+    return 0
+
+  def run(self,dev,local_size):
+    for o in self.oseqs:
+      o.run(dev,local_size)
+
+  def y(self): # results of synthesis
+    yy = None
+    first_one = True
+    for o in self.oseqs:
+      this_y = o.y()
+      if first_one:
+        yy = this_y
+        first_one = False
+      else:
+        yy = numpy.add(yy,this_y)
+    return yy
+
+class OscillatorSeq:
+  """
+  A list of OscillatorLowLevel objects that occur sequentially in time.
+  """
+  cpu_c_lib = ctypes.cdll.LoadLibrary('./cpu_c.so')
+  MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS,MAX_INSTANCES = (
+               cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
+  def __init__(self,pars,partials):
+    # pars should contain keys n_samples, n_instances, t0, and dt
+    self.n_samples,self.t0,self.dt,self.n_instances = (
+          pars['n_samples'],pars['t0'],pars['dt'],pars['n_instances'])
+    if self.too_big_horizontally(partials):
       n_samples,t0,dt = (pars['n_samples'],pars['t0'],pars['dt'])
       if n_samples==0:
         raise Exception("recursion failed to bottom out")
@@ -32,21 +80,21 @@ class Oscillator:
         sub_partials = []
         for p in partials:
           sub_partials.append(p.restrict(sub_t0,sub_t1))
-        subs.append(Oscillator(sub_pars,sub_partials))
+        subs.append(OscillatorSeq(sub_pars,sub_partials))
       self.os = subs[0].os
       self.cat(subs[1])
-    else:
-      # If we get to here, we didn't need to recurse.
-      n_samples = pars['n_samples']
-      n_instances = pars['n_instances']
-      samples_per_instance = int(n_samples/n_instances)
-      if samples_per_instance*n_instances<n_samples:
-        samples_per_instance += 1
-      pars2 = copy.deepcopy(pars)
-      pars2['samples_per_instance'] = samples_per_instance
-      self.os = [OscillatorLowLevel(self,pars2)]
-      for o in self.os:
-        o.setup(partials)
+      return
+    # If we get to here, we didn't need to recurse.
+    n_samples = pars['n_samples']
+    n_instances = pars['n_instances']
+    samples_per_instance = int(n_samples/n_instances)
+    if samples_per_instance*n_instances<n_samples:
+      samples_per_instance += 1
+    pars2 = copy.deepcopy(pars)
+    pars2['samples_per_instance'] = samples_per_instance
+    self.os = [OscillatorLowLevel(self,pars2)]
+    for o in self.os:
+      o.setup(partials)
 
   def cat(self,osc):
     # concatenate two oscillators; doesn't return anything
