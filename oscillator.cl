@@ -96,12 +96,13 @@ void fn_osc(__global FLOAT *y,int i,
   }
   j1 = i*samples_per_instance;
   j2 = (i+1)*samples_per_instance-1;
+  if (j2>=n_samples) {j2=n_samples-1;}
   DEBUG(if (!(samples_per_instance>0)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
   DEBUG(if (!(j1>=0)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
   DEBUG(if (!(j2>=0)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
   DEBUG(if (!(j2>=j1)) {set_flags(error_details,i,j1,j2,samples_per_instance); ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
   DEBUG(if (!(j1>=0 && j2>=0 && j2>=j1 && samples_per_instance>0)) {set_flags(error_details,i,j1,(int) sizeof(j1),samples_per_instance); ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;}) // sanity check
-  DEBUG(if (j2>=n_samples) {ERR(err,i,HONK_ERR_INDEX_OUT_OF_RANGE); return;}) // sanity check
+  DEBUG(if (j1>=n_samples) {set_flags(error_details,i,j1,j2,n_samples); ERR(err,i,HONK_ERR_INDEX_OUT_OF_RANGE); return;}) // sanity check
   oscillator_cubic_spline(y,err,error_details,i,
                           phi_c_local,phi_knots,phi_n,
                           a_c_local,    a_knots    ,a_n,

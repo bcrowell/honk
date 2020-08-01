@@ -30,6 +30,4 @@ class Partial:
     return result
 
   def restrict(self,t1,t2):
-    r = Partial(self.f.restrict(t1,t2),self.a.restrict(t1,t2))
-    print(f"in Partial.restrict({t1},{t2}), result has time range {r.time_range()}")
     return Partial(self.f.restrict(t1,t2),self.a.restrict(t1,t2))

@@ -9,7 +9,7 @@ class Oscillator:
   MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS,MAX_INSTANCES = (
                cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
   def __init__(self,pars,partials):
-    print(f"Oscillator {pars['t0']},{pars['t0']+pars['n_samples']*pars['dt']}") # qwe
+    # pars should contain keys n_samples, samples_per_instance, n_instances, t0, and dt
     if self.too_big_horizontally(partials):
       n,t0,dt = (pars['n_samples'],pars['t0'],pars['dt'])
       if n==0:
@@ -27,18 +27,22 @@ class Oscillator:
           sub_t0 = t0+nn[0]*dt
         sub_t1 = sub_t0+(nn[i]-1)*dt
         sub_pars['t0'] = sub_t0
+        sub_pars['samples_per_instance'] = int(pars['samples_per_instance']/2)+1 # make sure it's big enough
         sub_partials = []
         for p in partials:
           sub_partials.append(p.restrict(sub_t0,sub_t1))
         subs.append(Oscillator(sub_pars,sub_partials))
-        print(f" ... returned from recursion {i}") # qwe
-      print(f" ... created both recursions") # qwe
-      return subs[0].cat(subs[1])
-    # If we get to here, we didn't need to recurse.
-    print(f" ... bottomed out on {pars['t0']},{pars['t0']+pars['n_samples']*pars['dt']}") # qwe
-    self.os = [OscillatorLowLevel(self,pars)]
-    for o in self.os:
-      o.setup(partials)
+      self.os = subs[0].os
+      self.cat(subs[1])
+    else:
+      # If we get to here, we didn't need to recurse.
+      self.os = [OscillatorLowLevel(self,pars)]
+      for o in self.os:
+        o.setup(partials)
+
+  def cat(self,osc):
+    # concatenate two oscillators; doesn't return anything
+    self.os.extend(osc.os)
 
   def error_code(self):
     for o in self.os:
@@ -47,14 +51,14 @@ class Oscillator:
     return 0
 
   def __str__(self):
-    s = ''
+    s = 'Oscillator:\n'
     for o in self.os:
       s = s + str(o)
     return s
 
-  def run(self,dev,n_instances,local_size):
+  def run(self,dev,local_size):
     for o in self.os:
-      o.run(dev,n_instances,local_size)
+      o.run(dev,o.n_instances,local_size)
 
   def y(self): # results of synthesis
     yy = []
@@ -75,14 +79,12 @@ class Oscillator:
       l = lambda p:p.a.x
     return len(functools.reduce(cat,list(map(l,partials))))
 
-  def cat(self,osc):
-    # concatenate two oscillators
-    self.os.extend(osc.os)
-
 class OscillatorLowLevel:
   def __init__(self,parent,pars):
+    # pars should contain keys n_samples, samples_per_instance, n_instances, t0, and dt
     self.parent = parent
-    self.n_samples,self.samples_per_instance,self.t0,self.dt = (pars['n_samples'],pars['samples_per_instance'],pars['t0'],pars['dt'])
+    self.n_samples,self.samples_per_instance,self.t0,self.dt,self.n_instances = (
+          pars['n_samples'],pars['samples_per_instance'],pars['t0'],pars['dt'],pars['n_instances'])
     # buffer to hold synthesized sound:
     self.y = numpy.zeros(self.n_samples, numpy.float32)
     # misc data structures:
@@ -210,9 +212,13 @@ class OscillatorLowLevel:
       self.my_errors = 1
 
 def error_to_string(n):
-  return {1:"undefined function",2:"spline too large",3:"too many partials",4:"too many knots in spline",
-          5:"unexpected NaN",6:"index out of range",7:"illegal value"}[n]
+  s = {1:"undefined function",2:"spline too large",3:"too many partials",4:"too many knots in spline",
+          5:"unexpected NaN",6:"index out of range",7:"illegal value"}
   # ... defined in constants.h
+  if n in s:
+    return s[n]
+  else:
+    return str(n)
 
 def sa(a):
   # make an array into a string, omitting trailing zeroes

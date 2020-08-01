@@ -34,12 +34,12 @@ def main():
   p8 = p1.scale_f(8).scale_a(1/math.sqrt(0.1))
   partials = [ p1,p2,p3,p4,p5,p6,p7,p8  ] 
 
-  osc = Oscillator({'n_samples':n_samples,'samples_per_instance':samples_per_instance,'t0':0.0,'dt':1/sample_freq},partials)
+  osc = Oscillator({'n_samples':n_samples,'samples_per_instance':samples_per_instance,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
   p1.f.graph("a.png",0,4,100) # make a graph of the frequency of the fundamental
 
   timer_start = time.perf_counter()
-  osc.run(dev,n_instances,local_size)
+  osc.run(dev,local_size)
   timer_end = time.perf_counter()
    
   print("return code=",osc.error_code())
