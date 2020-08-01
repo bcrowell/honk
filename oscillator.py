@@ -75,7 +75,8 @@ class Oscillator:
   def too_big_horizontally(self,partials):
     n_phi_knots = self.count_knots(partials,"phi")
     n_a_knots = self.count_knots(partials,"a")
-    return (n_phi_knots>200 or n_a_knots>200) # qwe
+    # return (n_phi_knots>200 or n_a_knots>200) 
+    # ... if I want to artificially force a split
     return (n_phi_knots>Oscillator.MAX_SPLINE_KNOTS or n_a_knots>Oscillator.MAX_SPLINE_KNOTS)
 
   def count_knots(self,partials,which):
