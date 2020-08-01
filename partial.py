@@ -15,6 +15,15 @@ class Partial:
     if self.phi.order()!=4:
       raise Exception(f"in constructor for Partial, phase is not a quartic polynomial, has order {self.phi.order()} instead")
 
+  @classmethod
+  def from_phase_and_amplitude(cls,phi,a):
+    """
+    This is required when we need to get the absolute phase right, as when splitting a time interval into two parts without a discontinuity.
+    """
+    result = cls(phi.derivative(),a) # initialize it with the wrong constant of integration
+    result.phi = phi # fix incorrect constant of integration
+    return result
+
   def time_range(self):
     return self.a.time_intersection(self.phi)
 
@@ -30,4 +39,4 @@ class Partial:
     return result
 
   def restrict(self,t1,t2):
-    return Partial(self.f.restrict(t1,t2),self.a.restrict(t1,t2))
+    return Partial.from_phase_and_amplitude(self.phi.restrict(t1,t2),self.a.restrict(t1,t2))

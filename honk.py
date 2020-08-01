@@ -22,20 +22,24 @@ def main():
   sample_freq = 44100.0
   n_samples = int(length_sec*sample_freq)
 
-  vib = vibrato.generate(150,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
-  p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0"))
-  p2 = p1.scale_f(2).scale_a(1/math.sqrt(0.5))
-  p3 = p1.scale_f(3).scale_a(1/math.sqrt(0.3))
-  p4 = p1.scale_f(4).scale_a(1/math.sqrt(0.5))
-  p5 = p1.scale_f(5).scale_a(1/math.sqrt(0.35))
-  p6 = p1.scale_f(6).scale_a(1/math.sqrt(0.25))
-  p7 = p1.scale_f(7).scale_a(1/math.sqrt(0.25))
-  p8 = p1.scale_f(8).scale_a(1/math.sqrt(0.1))
-  partials = [ p1,p2,p3,p4,p5,p6,p7,p8  ] 
+  if False:
+    partials = [Partial(Pie.from_string("0 99 , 1.4 99 ; , 1.6 101.3141592 c ; , 3 101.3141592"),
+                        Pie.from_string("0 0,0.1 1 c ; , 2.9 1 ; , 3 0 c"))]
+  else:
+    vib = vibrato.generate(150,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
+    p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0"))
+    p2 = p1.scale_f(2).scale_a(1/math.sqrt(0.5))
+    p3 = p1.scale_f(3).scale_a(1/math.sqrt(0.3))
+    p4 = p1.scale_f(4).scale_a(1/math.sqrt(0.5))
+    p5 = p1.scale_f(5).scale_a(1/math.sqrt(0.35))
+    p6 = p1.scale_f(6).scale_a(1/math.sqrt(0.25))
+    p7 = p1.scale_f(7).scale_a(1/math.sqrt(0.25))
+    p8 = p1.scale_f(8).scale_a(1/math.sqrt(0.1))
+    partials = [ p1,p2,p3,p4,p5,p6,p7,p8  ] 
 
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
-  p1.f.graph("a.png",0,4,100) # make a graph of the frequency of the fundamental
+  # p1.f.graph("a.png",0,4,100) # make a graph of the frequency of the fundamental
 
   timer_start = time.perf_counter()
   osc.run(dev,local_size)

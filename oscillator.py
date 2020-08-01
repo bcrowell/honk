@@ -10,13 +10,14 @@ class Oscillator:
                cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
   def __init__(self,pars,partials):
     # pars should contain keys n_samples, n_instances, t0, and dt
-    if self.too_big_horizontally(partials):
-      n,t0,dt = (pars['n_samples'],pars['t0'],pars['dt'])
-      if n==0:
+    force_split_for_testing = pars['n_samples']>44100*1.5 # qwe
+    if self.too_big_horizontally(partials) or force_split_for_testing:
+      n_samples,t0,dt = (pars['n_samples'],pars['t0'],pars['dt'])
+      if n_samples==0:
         raise Exception("recursion failed to bottom out")
       nn = [0,0]
-      nn[0] = int(n/2)
-      nn[1] = n-nn[0]
+      nn[0] = int(n_samples/2)
+      nn[1] = n_samples-nn[0]
       subs = []
       for i in range(2):
         sub_pars = copy.deepcopy(pars)
@@ -69,14 +70,16 @@ class Oscillator:
   def y(self): # results of synthesis
     yy = []
     for o in self.os:
+      print(f"concatenating, {o.n_samples} samples, {len(o.y)}, 0: {o.y[0]}, 1: {o.y[1]}, -2: {o.y[-2]}, -1: {o.y[-1]} ") # qwe
       yy.extend(o.y)
     return yy
 
   def too_big_horizontally(self,partials):
     n_phi_knots = self.count_knots(partials,"phi")
     n_a_knots = self.count_knots(partials,"a")
-    # return (n_phi_knots>200 or n_a_knots>200) 
-    # ... if I want to artificially force a split
+    if False:
+      print("artificially causing a horizontal split")
+      return (n_phi_knots>200 or n_a_knots>200)
     return (n_phi_knots>Oscillator.MAX_SPLINE_KNOTS or n_a_knots>Oscillator.MAX_SPLINE_KNOTS)
 
   def count_knots(self,partials,which):
@@ -134,14 +137,18 @@ class OscillatorLowLevel:
       self.a_n[i] = len(p.a.x)
     t1 = self.t0+self.dt*self.n_samples
     if not (self.in_time_range(self.t0) and self.in_time_range(t1)):
-      raise Exception(f"illegal time range, t={self.t0} to {t1} is not within time range of partials, which is {self.time_range()}")
+      raise Exception(f"illegal time range, t={self.t0} to {t1} is not within time range of partials, which is {self.defined_time_range()}")
     self.f_pars[0] = self.t0
     self.f_pars[1] = self.dt
     self.i_pars[0] = self.samples_per_instance
     self.i_pars[1] = len(partials)
     self.i_pars[2] = self.n_samples
+    if True: # qwe
+      print(f"oscillator.setup, t0={self.t0} dt={self.dt} spi={self.samples_per_instance} n_samples={self.n_samples}")
+      print(f"  {self}")
 
-  def time_range(self):
+  def defined_time_range(self):
+    # intersection of domains of all partials
     a,b = self.partials[0].time_range()
     for p in self.partials:
       (aa,bb) = p.time_range()
@@ -150,14 +157,16 @@ class OscillatorLowLevel:
     return (a,b)    
 
   def in_time_range(self,t):
-    a,b = self.time_range()
+    a,b = self.defined_time_range()
     return (t>=a and t<=b)
 
   def __str__(self):
     result = ''
-    result = result + "valid time range = "+str(self.time_range())+"\n"
+    result = result + "defined time range = "+str(self.defined_time_range())+"\n"
     result = result + "a_knots = "+sa(self.a_knots)+"\n"
     result = result + "a_c = "+sa(self.a_c)+"\n"
+    result = result + "phi_knots = "+sa(self.phi_knots)+"\n"
+    result = result + "phi_c = "+sa(self.phi_c)+"\n"
     return result
 
   def run(self,dev,n_instances,local_size):
