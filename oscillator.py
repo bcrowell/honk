@@ -10,7 +10,8 @@ class Oscillator:
                cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
   def __init__(self,pars,partials):
     # pars should contain keys n_samples, n_instances, t0, and dt
-    force_split_for_testing = pars['n_samples']>44100*1.5 # qwe
+    force_split_for_testing = False
+    # force_split_for_testing = pars['n_samples']>44100*1.5
     if self.too_big_horizontally(partials) or force_split_for_testing:
       n_samples,t0,dt = (pars['n_samples'],pars['t0'],pars['dt'])
       if n_samples==0:
@@ -70,7 +71,6 @@ class Oscillator:
   def y(self): # results of synthesis
     yy = []
     for o in self.os:
-      print(f"concatenating, {o.n_samples} samples, {len(o.y)}, 0: {o.y[0]}, 1: {o.y[1]}, -2: {o.y[-2]}, -1: {o.y[-1]} ") # qwe
       yy.extend(o.y)
     return yy
 
@@ -143,9 +143,6 @@ class OscillatorLowLevel:
     self.i_pars[0] = self.samples_per_instance
     self.i_pars[1] = len(partials)
     self.i_pars[2] = self.n_samples
-    if True: # qwe
-      print(f"oscillator.setup, t0={self.t0} dt={self.dt} spi={self.samples_per_instance} n_samples={self.n_samples}")
-      print(f"  {self}")
 
   def defined_time_range(self):
     # intersection of domains of all partials

@@ -9,7 +9,6 @@ from opencl_device import OpenClDevice
 from oscillator import Oscillator
 from partial import Partial
 from pie import Pie
-from scipy.interpolate import CubicSpline # qwe
 import vibrato
 
 def main():
