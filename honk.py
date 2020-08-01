@@ -20,8 +20,7 @@ def main():
   n_instances = 256 # larger values cause mysterious behavior that smells like corrupted memory or instances modifying each other's memory
   local_size = 64 # must divide n_instances, and my video card prefers it to be at least 32
   sample_freq = 44100.0
-  samples_per_instance = int(length_sec*sample_freq/n_instances)
-  n_samples = n_instances*samples_per_instance
+  n_samples = int(length_sec*sample_freq)
 
   vib = vibrato.generate(150,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
   p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0"))
@@ -34,7 +33,7 @@ def main():
   p8 = p1.scale_f(8).scale_a(1/math.sqrt(0.1))
   partials = [ p1,p2,p3,p4,p5,p6,p7,p8  ] 
 
-  osc = Oscillator({'n_samples':n_samples,'samples_per_instance':samples_per_instance,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
+  osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
   p1.f.graph("a.png",0,4,100) # make a graph of the frequency of the fundamental
 

@@ -9,7 +9,7 @@ class Oscillator:
   MAX_SPLINE_KNOTS,SPLINE_ORDER,MAX_SPLINE_COEFFS,MAX_PARTIALS,MAX_INSTANCES = (
                cpu_c_lib.get_max_sizes(0),cpu_c_lib.get_max_sizes(1),cpu_c_lib.get_max_sizes(2),cpu_c_lib.get_max_sizes(3),cpu_c_lib.get_max_sizes(4))
   def __init__(self,pars,partials):
-    # pars should contain keys n_samples, samples_per_instance, n_instances, t0, and dt
+    # pars should contain keys n_samples, n_instances, t0, and dt
     if self.too_big_horizontally(partials):
       n,t0,dt = (pars['n_samples'],pars['t0'],pars['dt'])
       if n==0:
@@ -27,7 +27,6 @@ class Oscillator:
           sub_t0 = t0+nn[0]*dt
         sub_t1 = sub_t0+(nn[i]-1)*dt
         sub_pars['t0'] = sub_t0
-        sub_pars['samples_per_instance'] = int(pars['samples_per_instance']/2)+1 # make sure it's big enough
         sub_partials = []
         for p in partials:
           sub_partials.append(p.restrict(sub_t0,sub_t1))
@@ -36,7 +35,14 @@ class Oscillator:
       self.cat(subs[1])
     else:
       # If we get to here, we didn't need to recurse.
-      self.os = [OscillatorLowLevel(self,pars)]
+      n_samples = pars['n_samples']
+      n_instances = pars['n_instances']
+      samples_per_instance = int(n_samples/n_instances)
+      if samples_per_instance*n_instances<n_samples:
+        samples_per_instance += 1
+      pars2 = copy.deepcopy(pars)
+      pars2['samples_per_instance'] = samples_per_instance
+      self.os = [OscillatorLowLevel(self,pars2)]
       for o in self.os:
         o.setup(partials)
 
