@@ -41,8 +41,7 @@ def main():
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
   r = p1.a.approx_product(p1.f)
-  print(r)
-  r.graph("a.png",0,3,300) # make a graph of the frequency of the fundamental
+  r.graph("a.png",1,2,300) # make a graph of the frequency of the fundamental
 
   # p1.f.graph("a.png",0,4,100) # make a graph of the frequency of the fundamental
 

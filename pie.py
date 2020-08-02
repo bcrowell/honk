@@ -222,11 +222,10 @@ class Pie(PPoly):
       j,k,l,m = Pie.invert_2x2(h**2,h**3,2*h,3*h**2)
       a = r1
       b = r1d
-      d1 = r2-a
-      d2 = r2d-b # why huge?
+      d1 = r2-a-b*h
+      d2 = r2d-b
       c = j*d1+k*d2
       d = l*d1+m*d2
-      print(f"h={h} jklm={j} {k} {l} {m}, d1 d2={d1} {d2}")
       polys.append([a,b,c,d])
     result = copy.deepcopy(self)
     result.x = new_x
