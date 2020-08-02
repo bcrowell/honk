@@ -181,13 +181,21 @@ class Pie(PPoly):
       p.append(Pie(scipy.interpolate.CubicSpline([t[i],t[i+1]],[y[i],y[i+1]],bc_type='clamped')))
     return Pie.join(p)
 
-  def approx_product(self,q):
+  def approx_product(self,q,min_h=0.001):
     """
     Multiply two piecewise polynomials and then try to form an approximation to their product using a piecewise cubic.
     The knots of the result are the union of the knots of the two functions.
     The polynomial in each interval is built to have the correct values and derivatives at the end-points of that interval.
+    When two knots lie within min_h of each other, we delete the later one.
     """
-    new_x = sorted(self.x+q.x) # union of knots of the two functions
+    u = set(self.x).union(set(q.x)) # union of knots of the two functions
+    l = sorted(list(u))
+    # Get rid of very short pieces.
+    new_l = [l[0]]
+    for i in range(len(l)-1):
+      if abs(new_l[-1]-l[i+1])>min_h:
+        new_l.append(l[i+1])
+    new_x = numpy.asarray(new_l,dtype=numpy.float) 
     pd = self.derivative()
     qd = q.derivative()
     polys = []
@@ -211,7 +219,7 @@ class Pie(PPoly):
       r1d = p1*q1d+p1d*q1
       r2d = p2*q2d+p2d*q2
       # Find a+bx+cx^2+dx^3 that matches R and R' at the endpoints.
-      j,k,l,m = invert_2x2(h**2,h**3,2*h,3*h**2)
+      j,k,l,m = Pie.invert_2x2(h**2,h**3,2*h,3*h**2)
       a = r1
       b = r1d
       c = j*(r2-a)+k*(r2d-b)
@@ -229,4 +237,9 @@ class Pie(PPoly):
     result.c = numpy.asarray(new_c, dtype=numpy.float)
     result.assert_valid()
     return result
-    
+
+  @staticmethod
+  def invert_2x2(a,b,c,d):
+    det = a*d-b*c
+    return (d/det,-b/det,-c/det,a/det)
+
