@@ -18,6 +18,9 @@ def generate(fc,t,rate1,rate2,width,shape_r,shape_w):
   We never want env_r to be zero, because then f is constant and not equal to fc, so it just sounds like we're playing the
   note out of tune. This is the reason for making rate1 nonzero. It's OK to make rate1 equal to rate2, in which case the
   vib doesn't accelerate or decelerate.
+  For real-world viola vib, see Brown, 1996, Pitch center of stringed instrument vibrato tones. They see width=0.30-0.50,
+  rarely/momentarily 0.70, avg=0.40; rate=4-8 cycles/s, mostly about 6. When I played with synthesis before reading the
+  Brown paper, what I selected myself as sounding most like a real vib on a stringed instrument was width=0.4 and rate=6/s.
   """
   tv = 1.0/rate2 # time for one vibrato cycle
   df = (2.0**(0.5*width/12.0)-1)*fc
