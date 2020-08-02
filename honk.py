@@ -38,8 +38,8 @@ def main():
       partials.append(p)
 
   # filter through log comb filter
-  for partial in range(partials):
-    partials[i].filter(lambda f:log_comb_response(f))
+  for partial in partials:
+    partials[i].filter(lambda f:instruments.log_comb_response(f))
 
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 

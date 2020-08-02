@@ -1,5 +1,6 @@
 import math,copy
 import pie
+from pie import Pie
 
 class Partial:
   def __init__(self,f,a):
@@ -56,4 +57,4 @@ class Partial:
     # If knots of frequency are extrema (as expected with FM constructed by my method for vibrato), then these are also almost certainly
     # extrema of gain. There could actually be more extrema in between that we miss, as when a violin vib runs back and forth over multiple resonances
     # in a high-frequency partial.
-    self.a = a.approx_product(am)
+    self.a = self.a.approx_product(am)

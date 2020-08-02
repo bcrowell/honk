@@ -51,7 +51,7 @@ def log_comb_response(f,contrast=10,spacing=1.2):
   Output is a gain (in linear amplitude units).
   """
   x = 54.388*math.log(f)/spacing # the numerical factor is (6/ln2)(2pi)
-  y = 0.057565*contrast*sin(x)
+  y = 0.057565*contrast*math.sin(x)
   # ... the numerical factor is (1/2)(1/2)(1/10)ln 10; reasons for factors are as follows:
   #     1/2 ... sine function has a peak-to-peak variation of 2 units
   #     1/2 ... put it in linear amplitude units (as opposed to contrast, which is in db power units)
