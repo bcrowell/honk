@@ -245,7 +245,7 @@ class OscillatorLowLevel:
     to_local = [phi_n_buf,a_n_buf,phi_knots_buf,phi_c_buf,a_c_buf]
     tot_local_per_instance = functools.reduce(lambda a,b:a+b,list(map(lambda x:sys.getsizeof(x),to_local)))
     workgroup_size = n_instances/local_size
-    print(f"estimated total size of local arrays: {tot_local_per_instance*workgroup_size/1024.0} kb per workgroup")
+    #print(f"estimated total size of local arrays: {tot_local_per_instance*workgroup_size/1024.0} kb per workgroup")
    
     program.oscillator(queue, (n_instances,), (local_size,),
                        y_buf,

@@ -203,7 +203,7 @@ class Pie(PPoly):
       x1 = new_x[i]
       x2 = new_x[i+1]
       h = x2-x1
-      eps = h/1.0e-5
+      eps = h*1.0e-5
       # Define R(x)=P(x)Q(x). Evaluate P, Q, P', and Q' at the end-points.
       p1 = self(x1)
       p2 = self(x2)
@@ -222,8 +222,11 @@ class Pie(PPoly):
       j,k,l,m = Pie.invert_2x2(h**2,h**3,2*h,3*h**2)
       a = r1
       b = r1d
-      c = j*(r2-a)+k*(r2d-b)
-      d = l*(r2-a)+m*(r2d-b)
+      d1 = r2-a
+      d2 = r2d-b # why huge?
+      c = j*d1+k*d2
+      d = l*d1+m*d2
+      print(f"h={h} jklm={j} {k} {l} {m}, d1 d2={d1} {d2}")
       polys.append([a,b,c,d])
     result = copy.deepcopy(self)
     result.x = new_x
