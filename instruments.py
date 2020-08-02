@@ -43,18 +43,27 @@ def normalize(amplitudes,norm):
   k = norm/s
   return k*numpy.array(amplitudes)
 
-def log_comb_response(f,contrast=10,spacing=1.2):
+def log_comb_response(f,contrast=15,spacing=1.06,i=0):
   """
   Simulate a response function of the type described by Mathews and Kohut, 1973, Electronic simulation of violin resonances.
-  Spacing of filter is in units of whole-tones. Mathews lists frequencies that are about 1.4 whole-steps apart at low frequencies,
-  more like 1.0 at the high ones. Contrast is dB power.
+  Spacing of filter is in units of whole-tones. Mathews lists frequencies with spacings that vary somewhat irregularly.
+  Contrast is dB power.
   Output is a gain (in linear amplitude units).
   """
-  x = 54.388*math.log(f)/spacing # the numerical factor is (6/ln2)(2pi)
-  y = 0.057565*contrast*math.sin(x)
+  x = 54.388*math.log(f)/spacing
+  # ... Pitch in wholetones, times 2pi. The numerical factor is (6/ln2)(2pi).
+
+  irreg = i*0.1*math.sin(0.4*x)
+  # ... Add some irregularity to the spacing. The 0.1 is just so I can use integer-ish values of i.
+  #     The 0.4 is somewhat arbitrary, just meant to represent the "wavelength" of the variation in Mathews' numbers.
+  #     I can't hear any effect on sound with i=3, 6, or 12. Also tried 0.7 as the factor inside, still no clear effect.
+  #     For all I know, their variations were because of what electrical components they had handy.
+
+  y = 0.057565*contrast*math.sin(x+irreg)
   # ... the numerical factor is (1/2)(1/2)(1/10)ln 10; reasons for factors are as follows:
   #     1/2 ... sine function has a peak-to-peak variation of 2 units
   #     1/2 ... put it in linear amplitude units (as opposed to contrast, which is in db power units)
   #     1/10 ... because it's *deci*bels
   #     ln 10 ... bels are base 10
+
   return math.exp(y)

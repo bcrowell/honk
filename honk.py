@@ -37,9 +37,8 @@ def main():
         p = copy.deepcopy(p1).scale_f(n).scale_a(a[i])
       partials.append(copy.deepcopy(p))
 
-  if True:
-    for partial in partials:
-      partial.filter(lambda f:instruments.log_comb_response(f))
+  for partial in partials:
+    partial.filter(lambda f:instruments.log_comb_response(f,i=0))
 
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
