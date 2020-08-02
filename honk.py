@@ -31,19 +31,21 @@ def main():
     for i in range(len(a)):
       n=i+1 # n=1 for fundamental
       if n==1:
-        p1 = Partial(vib,Pie.from_string("0 0,0.05 0.5 c ; , 2 1 ; , 3 0"))
+        p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0"))
         p = p1
       else:
-        p = p1.scale_f(n).scale_a(a[i])
-      partials.append(p)
+        p = copy.deepcopy(p1).scale_f(n).scale_a(a[i])
+      partials.append(copy.deepcopy(p))
 
-  # filter through log comb filter
-  for partial in partials:
-    partials[i].filter(lambda f:instruments.log_comb_response(f))
+  if True:
+    for partial in partials:
+      partial.filter(lambda f:instruments.log_comb_response(f))
 
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
-  # p1.f.graph("a.png",0,4,100) # make a graph of the frequency of the fundamental
+  print("graphing...")
+  partials[10].a.graph("a.png",0,3,100)
+  print("...done")
 
   timer_start = time.perf_counter()
   osc.run(dev,local_size)

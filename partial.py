@@ -52,6 +52,7 @@ class Partial:
     for t in self.f.x:
       f = self.f(t)
       gain = filt(f)
+      #print(f"f={f}, gain={gain}")
       modulation.append(gain)
     am = Pie.join_extrema(self.f.x,modulation)
     # If knots of frequency are extrema (as expected with FM constructed by my method for vibrato), then these are also almost certainly

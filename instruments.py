@@ -56,5 +56,5 @@ def log_comb_response(f,contrast=10,spacing=1.2):
   #     1/2 ... sine function has a peak-to-peak variation of 2 units
   #     1/2 ... put it in linear amplitude units (as opposed to contrast, which is in db power units)
   #     1/10 ... because it's *deci*bels
-  #     ln 10 ... base 10
+  #     ln 10 ... bels are base 10
   return math.exp(y)
