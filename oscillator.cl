@@ -96,6 +96,8 @@ void fn_osc(__global FLOAT *y,int i,
   }
   j1 = i*samples_per_instance;
   j2 = (i+1)*samples_per_instance-1;
+  if (j1>=n_samples) {return;} // this can happen and is OK; we made an instance that we didn't need; could work on oscillator.py to make this
+                          // never happen, but not a big deal
   if (j2>=n_samples) {j2=n_samples-1;}
   DEBUG(if (!(samples_per_instance>0)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
   DEBUG(if (!(j1>=0)) {ERR(err,i,HONK_ERR_ILLEGAL_VALUE); return;})
