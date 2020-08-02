@@ -180,3 +180,53 @@ class Pie(PPoly):
     for i in range(len(t)-1):
       p.append(Pie(scipy.interpolate.CubicSpline([t[i],t[i+1]],[y[i],y[i+1]],bc_type='clamped')))
     return Pie.join(p)
+
+  def approx_product(self,q):
+    """
+    Multiply two piecewise polynomials and then try to form an approximation to their product using a piecewise cubic.
+    The knots of the result are the union of the knots of the two functions.
+    The polynomial in each interval is built to have the correct values and derivatives at the end-points of that interval.
+    """
+    new_x = sorted(self.x+q.x) # union of knots of the two functions
+    pd = self.derivative()
+    qd = q.derivative()
+    polys = []
+    for i in range(len(new_x)-1):
+      x1 = new_x[i]
+      x2 = new_x[i+1]
+      h = x2-x1
+      eps = h/1.0e-5
+      # Define R(x)=P(x)Q(x). Evaluate P, Q, P', and Q' at the end-points.
+      p1 = self(x1)
+      p2 = self(x2)
+      q1 = q(x1)
+      q2 = q(x2)
+      p1d = pd(x1+eps)
+      p2d = pd(x2-eps)
+      q1d = qd(x1+eps)
+      q2d = qd(x2-eps)
+      r1 = p1*q1
+      r2 = p2*q2
+      # Use Leibniz rule to evaluate R and R' at the end-points.
+      r1d = p1*q1d+p1d*q1
+      r2d = p2*q2d+p2d*q2
+      # Find a+bx+cx^2+dx^3 that matches R and R' at the endpoints.
+      j,k,l,m = invert_2x2(h**2,h**3,2*h,3*h**2)
+      a = r1
+      b = r1d
+      c = j*(r2-a)+k*(r2d-b)
+      d = l*(r2-a)+m*(r2d-b)
+      polys.append([a,b,c,d])
+    result = copy.deepcopy(self)
+    result.x = new_x
+    # flip and twist coeffs into the weird form used by PPoly
+    new_c = []
+    for row_num in range(4):
+      new_row = []
+      for col_num in range(len(polys)):
+        new_row.append(polys[col_num][3-row_num])
+      new_c.append(new_row)
+    result.c = numpy.asarray(new_c, dtype=numpy.float)
+    result.assert_valid()
+    return result
+    
