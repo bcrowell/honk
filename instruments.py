@@ -1,6 +1,6 @@
 import math,numpy,scipy
 
-def violin(n_partials=100,instrument="violin",f=None,brightness=0,what="bd",norm=1):
+def violin_envelope(n_partials=100,instrument="violin",f=None,brightness=0,what="bd",norm=1):
   """
   Return the amplitude spectrum (magnitudes only).
   Schoonderwaldt, 2009, "The Violinist’s Sound Palette: Spectral Centroid, Pitch Flattening and Anomalous Low Frequencies."

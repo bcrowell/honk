@@ -9,8 +9,7 @@ from opencl_device import OpenClDevice
 from oscillator import Oscillator
 from partial import Partial
 from pie import Pie
-import envelope
-import vibrato
+import instruments,vibrato
 
 def main():
   dev = OpenClDevice()
@@ -26,7 +25,7 @@ def main():
     partials = [Partial(Pie.from_string("0 99 , 1.4 99 ; , 1.6 101.3141592 c ; , 3 101.3141592"),
                         Pie.from_string("0 0,0.1 1 c ; , 2.9 1 ; , 3 0 c"))]
   else:
-    a = envelope.violin(n_partials=100)
+    a = instruments.violin_envelope()
     vib = vibrato.generate(150,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
     partials = []
     for i in range(len(a)):
@@ -40,9 +39,6 @@ def main():
 
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
-  r = p1.a.approx_product(p1.f)
-  r.graph("a.png",1,2,300) # make a graph of the frequency of the fundamental
-
   # p1.f.graph("a.png",0,4,100) # make a graph of the frequency of the fundamental
 
   timer_start = time.perf_counter()
@@ -53,10 +49,8 @@ def main():
   if osc.error_code()!=0:
     sys.exit(" ******* exiting with an error **********")
   print("wall-lock time for computation = ",(timer_end-timer_start)*1000,"ms")
-  y = osc.y()
-  #print(y)
 
-  write_file('a.wav',y,n_samples,sample_freq)
+  write_file('a.wav',osc.y(),n_samples,sample_freq)
 
 def write_file(filename,y,n_samples,sample_freq):
   max_abs = 0.0
