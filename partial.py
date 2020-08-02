@@ -40,3 +40,20 @@ class Partial:
 
   def restrict(self,t1,t2):
     return Partial.from_phase_and_amplitude(self.phi.restrict(t1,t2),self.a.restrict(t1,t2))
+
+  def filter(self,filt):
+    """
+    Do a sort of mock-up of a filter, using the function filt that takes a frequency as an input and gives a (real-valued) gain as an output.
+    This is not linear, and is not really what people think of when they say "filter" in DSP. It also doesn't act on phases. It's
+    designed to fit my model of synthesis and to try to do the same thing perceptually as a normal "filter."
+    """
+    modulation = []
+    for t in self.f.x:
+      f = self.f(t)
+      gain = filt(f)
+      modulation.append(gain)
+    am = Pie.join_extrema(self.f.x,modulation)
+    # If knots of frequency are extrema (as expected with FM constructed by my method for vibrato), then these are also almost certainly
+    # extrema of gain. There could actually be more extrema in between that we miss, as when a violin vib runs back and forth over multiple resonances
+    # in a high-frequency partial.
+    self.a = a.approx_product(am)

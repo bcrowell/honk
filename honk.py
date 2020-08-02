@@ -37,6 +37,10 @@ def main():
         p = p1.scale_f(n).scale_a(a[i])
       partials.append(p)
 
+  # filter through log comb filter
+  for partial in range(partials):
+    partials[i].filter(lambda f:log_comb_response(f))
+
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
   # p1.f.graph("a.png",0,4,100) # make a graph of the frequency of the fundamental

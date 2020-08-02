@@ -42,3 +42,19 @@ def normalize(amplitudes,norm):
   s = math.sqrt(s)
   k = norm/s
   return k*numpy.array(amplitudes)
+
+def log_comb_response(f,contrast=10,spacing=1.2):
+  """
+  Simulate a response function of the type described by Mathews and Kohut, 1973, Electronic simulation of violin resonances.
+  Spacing of filter is in units of whole-tones. Mathews lists frequencies that are about 1.4 whole-steps apart at low frequencies,
+  more like 1.0 at the high ones. Contrast is dB power.
+  Output is a gain (in linear amplitude units).
+  """
+  x = 54.388*math.log(f)/spacing # the numerical factor is (6/ln2)(2pi)
+  y = 0.057565*contrast*sin(x)
+  # ... the numerical factor is (1/2)(1/2)(1/10)ln 10; reasons for factors are as follows:
+  #     1/2 ... sine function has a peak-to-peak variation of 2 units
+  #     1/2 ... put it in linear amplitude units (as opposed to contrast, which is in db power units)
+  #     1/10 ... because it's *deci*bels
+  #     ln 10 ... base 10
+  return math.exp(y)
