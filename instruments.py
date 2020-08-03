@@ -43,21 +43,30 @@ def normalize(amplitudes,norm):
   k = norm/s
   return k*numpy.array(amplitudes)
 
-def log_comb_response(f,contrast=15,spacing=1.06,i=0):
+def log_comb_response(f,contrast=10,spacing=1.06,i=3,ic=0.7,offset=0):
   """
   Simulate a response function of the type described by Mathews and Kohut, 1973, Electronic simulation of violin resonances.
   Spacing of filter is in units of whole-tones. Mathews lists frequencies with spacings that vary somewhat irregularly.
-  Contrast is dB power.
+  Contrast is dB power. A contrast of 15 produces a clear difference from the unfiltered tone, but an uneven tone.
   Output is a gain (in linear amplitude units).
   """
-  x = 54.388*math.log(f)/spacing
-  # ... Pitch in wholetones, times 2pi. The numerical factor is (6/ln2)(2pi).
+  mathews = [.24,.07,-.17,-.11,.02,-.07,-.03,.01,.04,.06,.01,0.0,.03,-.02,-.13,.06,.05,-.04,.07,.06,.02,.03,-.07]
+  # difference, in whole tones, between best-fit linear rule and mathews's slightly irregular frequencies
 
-  irreg = i*0.1*math.sin(0.4*x)
-  # ... Add some irregularity to the spacing. The 0.1 is just so I can use integer-ish values of i.
-  #     The 0.4 is somewhat arbitrary, just meant to represent the "wavelength" of the variation in Mathews' numbers.
-  #     I can't hear any effect on sound with i=3, 6, or 12. Also tried 0.7 as the factor inside, still no clear effect.
-  #     For all I know, their variations were because of what electrical components they had handy.
+  x = 54.388*math.log(f)/spacing+offset*0.628318530717959
+  # ... Pitch in wholetones, times 2pi. The first numerical factor is (6/ln2)(2pi). The second one is 2pi/10, so that
+  #     an offset of 10 moves us by one whole step, or approximately one comb spacing.
+
+  irreg = i*0.1*math.sin(ic*x)
+  '''
+       Add some irregularity to the spacing. The 0.1 is just so I can use integer-ish values of i.
+       The value of ic is somewhat arbitrary, just meant to represent the "wavelength" of the variation in Mathews' numbers.
+       I can sometimes get just barely noticeable auditory effects from this irregularity, but they're subtle.
+       For all I know, Mathews' irregularities were because of what electrical components they had handy.
+       I get a slight audible difference between i=0 and i=3 with contrast=15, spacing=1.06, ic=0.7. The default values
+       of i and ic are chosen not because this necessarily sounded better but because it was one of the few sets of params
+       for which I was able to hear any audible effect.
+  '''   
 
   y = 0.057565*contrast*math.sin(x+irreg)
   # ... the numerical factor is (1/2)(1/2)(1/10)ln 10; reasons for factors are as follows:

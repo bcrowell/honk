@@ -38,7 +38,7 @@ def main():
       partials.append(copy.deepcopy(p))
 
   for partial in partials:
-    partial.filter(lambda f:instruments.log_comb_response(f,i=0))
+    partial.filter(lambda f:instruments.log_comb_response(f))
 
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
