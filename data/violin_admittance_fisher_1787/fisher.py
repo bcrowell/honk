@@ -3,11 +3,37 @@ Data from Saitis, 2012, Bridge admittance measurements of 10 preference-rated vi
 https://www.music.mcgill.ca/caml/lib/exe/fetch.php?media=publications:nantes2012_saitis.pdf
 The violin is the one they refer to as D, which their testers preferred the most.
 It's by Fisher, 1787.
-X axis is frequency in Hz.
-Y axis is bridge admittance in db.
 """
 
-def fisher_admittance():
+import scipy.interpolate
+import data.violin_admittance_fisher_1787.fisher as fisher
+
+def admittance(f):
+  """
+  Input is frequency in Hz. Output is bridge admittance as a gain factor (linear, not db).
+  """
+  if not hasattr(admittance,"func"):
+    x = []
+    y = []
+    pts = admittance_list()
+    for p in pts:
+      xx,yy = p
+      x.append(xx)
+      y.append(yy)
+    admittance.func = scipy.interpolate.interp1d(
+            x,y,
+            fill_value=(-48.6681,-28.7822),
+            bounds_error=False) # default is linear
+    # https://docs.scipy.org/doc/scipy/reference/tutorial/interpolate.html#d-interpolation-interp1d
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#scipy.interpolate.interp1d
+  a = admittance.func(f)+30 # arbitrarily add a constant so values aren't so small
+  return 10.0**(a/10.0)
+
+def admittance_list():
+  """
+  X axis is frequency in Hz.
+  Y axis is bridge admittance in db.
+  """
   return [
     [  200.5,-48.6681],
     [  208.8,-45.0026],
@@ -301,3 +327,4 @@ def fisher_admittance():
     [ 4955.4,-28.3103],
     [ 4991.1,-28.7822]
   ]
+

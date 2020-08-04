@@ -1,4 +1,5 @@
 import math,numpy,scipy
+import data.violin_admittance_fisher_1787.fisher as fisher
 
 def violin_envelope(n_partials=100,instrument="violin",f=None,brightness=0,what="bd",norm=1):
   """
@@ -42,6 +43,9 @@ def normalize(amplitudes,norm):
   s = math.sqrt(s)
   k = norm/s
   return k*numpy.array(amplitudes)
+
+def fisher_response(f):
+  return fisher.admittance(f)
 
 def log_comb_response(f,contrast=10,spacing=1.06,i=3,ic=0.7,offset=0):
   """
