@@ -197,6 +197,7 @@ class OscillatorLowLevel:
     a,b = self.partials[0].time_range()
     for p in self.partials:
       (aa,bb) = p.time_range()
+      #print(f"from {a},{b} to {max(a,aa)},{min(b,bb)}") # qwe
       a = max(a,aa)
       b = min(b,bb)
     return (a,b)    

@@ -194,7 +194,8 @@ class Pie(PPoly):
     The knots of the result are the union of the knots of the two functions.
     The polynomial in each interval is built to have the correct values and derivatives at the end-points of that interval,
     which in the case of addition gives an exact result.
-    When two knots lie within min_h of each other, we delete the one from q.
+    When knots from the two different functions lie within min_h of each other, we delete the one from q.
+    The time range of the result is guaranteed to be the same as the time range of self.
     """
     self_x_set = set(self.x)
     q_x_set = set(q.x)
@@ -203,12 +204,14 @@ class Pie(PPoly):
     # Get rid of very short pieces.
     new_l = [l[0]]
     for i in range(len(l)-1):
-      if abs(new_l[-1]-l[i+1])>min_h:
-        new_l.append(l[i+1])
+      t1 = new_l[-1]
+      t2 = l[i+1]
+      if abs(t1-t2)>min_h or (t1 in self_x_set and t2 in self_x_set) or (t1 in q_x_set and t2 in q_x_set):
+        new_l.append(t2)
       else:
         # Figure out which is the one from q.
-        if not (l[i+1] in q_x_set):
-          new_l[-1] = l[i+1] # keep the one from self
+        if not (t2 in q_x_set):
+          new_l[-1] = t2 # keep the one from self
     new_x = numpy.asarray(new_l,dtype=numpy.float) 
     pd = self.derivative()
     qd = q.derivative()
