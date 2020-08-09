@@ -1,6 +1,6 @@
 #!/bin/python3
 
-import wave,time,math,sys,copy
+import wave,time,math,sys,copy,random
 import pyopencl as cl
 from pyopencl import array
 import numpy,scipy
@@ -26,7 +26,7 @@ def main():
                         Pie.from_string("0 0,0.1 1 c ; , 2.9 1 ; , 3 0 c"))]
   else:
     a = instruments.violin_envelope()
-    vib = vibrato.generate(300,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
+    vib = vibrato.generate(290,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
     partials = []
     for i in range(len(a)):
       n=i+1 # n=1 for fundamental
@@ -37,17 +37,18 @@ def main():
         p = copy.deepcopy(p1).scale_f(n).scale_a(a[i])
       partials.append(copy.deepcopy(p))
 
-  resp = lambda f:1.0 # no filtering
+  # resp = lambda f:1.0 # no filtering
   # resp = lambda f:instruments.log_comb_response(f)
-  # resp = lambda f:instruments.fisher_response(f)
+  resp = lambda f:instruments.fisher_response(f)
   for partial in partials:
     partial.filter(resp)
 
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
-  print("graphing...")
-  partials[10].a.graph("a.png",0,3,100)
-  print("...done")
+  if False:
+    print("graphing...")
+    partials[10].a.graph("a.png",0,3,100)
+    print("...done")
 
   timer_start = time.perf_counter()
   osc.run(dev,local_size)

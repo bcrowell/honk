@@ -1,5 +1,6 @@
 import math,numpy,scipy
 import data.violin_admittance_fisher_1787.fisher as fisher
+import data.violin_bissinger_radiation_gain.bissinger as bissinger
 
 def violin_envelope(n_partials=100,instrument="violin",f=None,brightness=0,what="bd",norm=1):
   """
@@ -45,7 +46,15 @@ def normalize(amplitudes,norm):
   return k*numpy.array(amplitudes)
 
 def fisher_response(f):
-  return fisher.admittance(f)
+  return fisher.admittance(f)*bissinger.radiation_gain(f)*(f/1000.0)**-0.76
+  # Explanation of the third factor:
+  #   This factor is because empirically, without it, the tone comes out much too bright by ear.
+  #   The 1000 is just so that the factor comes out to be of order unity.
+  #   I determined the exponent as follows. Found a recording with a solo violin note (Perlman, A la carte) at 290 Hz. Took its spectrum
+  #   in audacity, which I assume is a power spectrum. Measured roll-off of spectrum by comparing 1st and 7th partial: -5.2 dB power per octave.
+  #   Compared with synthesized note, -1.5 dB power per octave. Correction is -2.3 dB amplitude per octave, which corresponds to
+  #   an exponent of ((ln10)/(10ln2))(-2.3)=-0.76. After inserting this factor, checked that the spectrum's envelope seemed to match
+  #   the real violin note, and it did seem to.
 
 def log_comb_response(f,contrast=10,spacing=1.06,i=3,ic=0.7,offset=0):
   """
