@@ -23,9 +23,15 @@ def main():
 
   a = instruments.violin_envelope()
 
+  attack_len = 0.05
+  scale_delayed_attacks = 0.2 # sounds bad unless 0.2 or less
+  fm_amount = 0.015 # 0.03-.07 produces a nice effect
+  fm_decay_time = 0.1 # in seconds; error when I make this bigger, why?
+  scale_brightening = 1.3 # for 1, a subtle effect, heard mainly as amplitude modulation; for 2, an extreme initial buzzing attack
+  n_low_br = 7 # if it's a bow speed effect, then maybe this should be 13, see Guettler fig. 7, but then I can't hear the effect
+
   # Experiment with delaying attack in higher partials.
   # Guettler, Looking at starting transients and tone coloring of the bowed string.
-  scale_delayed_attacks = 1.0
   delay_attack = [] # delay in seconds
   for i in range(len(a)):
     n=i+1
@@ -39,7 +45,6 @@ def main():
     delay_attack.append(scale_delayed_attacks*d/1000.0)
       
   vib = vibrato.generate(290,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
-  attack_len = 0.05
   partials = []
   for i in range(len(a)):
     n=i+1 # n=1 for fundamental
@@ -49,8 +54,19 @@ def main():
     p = Partial(vib,Pie.from_string(s)).scale_f(n).scale_a(a[i])
     partials.append(p)
 
+  # Experiment with brightening attack.
+  for i in range(len(partials)):
+    n=i+1 # n=1 for fundamental
+    if n>=1: 
+      attack_gain_db = 8*(n-n_low_br)/(65.0-13.0) # estimate reasonable slope from same fig, about 3.5 db/octave
+      attack_gain_db *= scale_brightening
+      attack_gain = 10.0**(attack_gain_db/10.0)
+      d = delay_attack[i]
+      l = attack_len
+      attack_envelope = Pie.from_string(f"0 {attack_gain} , {d+l} {attack_gain} ; , {d+2*l} 1.0 c ; , 3 1")
+      partials[i].a = partials[i].a.approx_product(attack_envelope)
+
   # Experiment with random frequency modulation on attack.
-  fm_amount = 0.0 # 0.100 produces a noticeable effect
   for i in range(len(partials)):
     p = partials[i]
     n_fm = int(10*length_sec)
@@ -63,7 +79,7 @@ def main():
       r = fm_amount*(random.random()-0.5)
       end_attack = delay_attack[i]+attack_len
       if tt>end_attack:
-        r = r*math.exp(-(tt-end_attack)/0.1)
+        r = r*math.exp(-(tt-end_attack)/fm_decay_time)
       f.append(r*p.f(0))
     fm = Pie.join_extrema(t,f)
     p.f = p.f.sum(fm)
@@ -79,6 +95,7 @@ def main():
 
   if False:
     print("graphing...")
+    #attack_envelope.graph("a.png",0,3,100)
     partials[10].a.graph("a.png",0,3,100)
     print("...done")
 
