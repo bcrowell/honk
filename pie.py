@@ -184,6 +184,9 @@ class Pie(PPoly):
   def approx_product(self,q,min_h=0.001):
     return Pie.arith(self,q,min_h,op='*')
 
+  def sum(self,q,min_h=0.001):
+    return Pie.arith(self,q,min_h,op='+')
+
   def arith(self,q,min_h=0.001,op='*'):
     """
     Add or multiply two piecewise cubics. In the case of multiplication, we can't get an exact result without
@@ -209,20 +212,21 @@ class Pie(PPoly):
       x2 = new_x[i+1]
       h = x2-x1
       eps = h*1.0e-5
-      # Define R(x)=P(x)Q(x). Evaluate P, Q, P', and Q' at the end-points.
-      p1 = self(x1)
-      p2 = self(x2)
-      q1 = q(x1)
-      q2 = q(x2)
-      p1d = pd(x1+eps)
-      p2d = pd(x2-eps)
-      q1d = qd(x1+eps)
-      q2d = qd(x2-eps)
-      r1 = p1*q1
-      r2 = p2*q2
-      # Use Leibniz rule to evaluate R and R' at the end-points.
-      r1d = p1*q1d+p1d*q1
-      r2d = p2*q2d+p2d*q2
+      if op=='*':
+        # Define R(x)=P(x)Q(x). Evaluate P, Q, P', and Q' at the end-points.
+        p1 = self(x1)
+        p2 = self(x2)
+        q1 = q(x1)
+        q2 = q(x2)
+        p1d = pd(x1+eps)
+        p2d = pd(x2-eps)
+        q1d = qd(x1+eps)
+        q2d = qd(x2-eps)
+        r1 = p1*q1
+        r2 = p2*q2
+        # Use Leibniz rule to evaluate R and R' at the end-points.
+        r1d = p1*q1d+p1d*q1
+        r2d = p2*q2d+p2d*q2
       # Find a+bx+cx^2+dx^3 that matches R and R' at the endpoints.
       j,k,l,m = Pie.invert_2x2(h**2,h**3,2*h,3*h**2)
       a = r1
