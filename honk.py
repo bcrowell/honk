@@ -31,7 +31,8 @@ def main():
     for i in range(len(a)):
       n=i+1 # n=1 for fundamental
       if n==1:
-        p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0"))
+        # p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0")) # gradual onset
+        p1 = Partial(vib,Pie.from_string("0 0,0.05 0.5 c ; , 2 1 ; , 3 0")) # faster attack
         p = p1
       else:
         p = copy.deepcopy(p1).scale_f(n).scale_a(a[i])
@@ -39,12 +40,17 @@ def main():
 
   # Experiment with random frequency modulation.
   for p in partials:
-    n_fm = int(20*length_sec)
+    n_fm = int(10*length_sec)
     t = []
     f = []
     for i in range(n_fm):
-      t.append((i/float(n_fm))*length_sec)
-      r = 0.030*(random.random()-0.5)
+      tt = (i/float(n_fm))*length_sec
+      tt = tt*0.5
+      t.append(tt)
+      r = 0.100*(random.random()-0.5)
+      end_attack = 0.05
+      if tt>end_attack:
+        r = r*math.exp(-(tt-end_attack)/0.1)
       f.append(r*p.f(0))
     fm = Pie.join_extrema(t,f)
     p.f = p.f.sum(fm)
