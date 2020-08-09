@@ -182,10 +182,15 @@ class Pie(PPoly):
     return Pie.join(p)
 
   def approx_product(self,q,min_h=0.001):
+    return Pie.arith(self,q,min_h,op='*')
+
+  def arith(self,q,min_h=0.001,op='*'):
     """
-    Multiply two piecewise polynomials and then try to form an approximation to their product using a piecewise cubic.
+    Add or multiply two piecewise cubics. In the case of multiplication, we can't get an exact result without
+    increasing the order, so we instead try to form an approximation to the product using a piecewise cubic.
     The knots of the result are the union of the knots of the two functions.
-    The polynomial in each interval is built to have the correct values and derivatives at the end-points of that interval.
+    The polynomial in each interval is built to have the correct values and derivatives at the end-points of that interval,
+    which in the case of addition gives an exact result.
     When two knots lie within min_h of each other, we delete the later one.
     """
     u = set(self.x).union(set(q.x)) # union of knots of the two functions
