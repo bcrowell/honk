@@ -32,7 +32,6 @@ def main():
     # d = delay in milliseconds, estimated from Guettler's fig 13.
     if n==1:
       d=15
-      continue
     if n>=2 and n<=3:
       d=0
     if n>=4:
@@ -40,24 +39,20 @@ def main():
     delay_attack.append(scale_delayed_attacks*d/1000.0)
       
   vib = vibrato.generate(290,3,3,6,0.4,[3,5,4,1],[1,8,4,1])
+  attack_len = 0.05
   partials = []
   for i in range(len(a)):
     n=i+1 # n=1 for fundamental
-    if n==1:
-      # p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0")) # gradual onset
-      d = delay_attack[i]
-      s = f"0 0, {d+.001} 0 ; , {d+0.05} 0.5 c ; , 2 1 ; , 3 0"
-      p1 = Partial(vib,Pie.from_string(s)) # faster attack
-      p = p1
-    else:
-      p = copy.deepcopy(p1).scale_f(n).scale_a(a[i])
-    print(f"i={i} p.time_range={p.time_range()}")
-    partials.append(copy.deepcopy(p))
-
+    # p1 = Partial(vib,Pie.from_string("0 0,0.2 0.5 c ; , 2 1 ; , 3 0")) # gradual onset
+    d = delay_attack[i]
+    s = f"0 0, {d+.001} 0 ; , {d+attack_len} 0.5 c ; , 2 1 ; , 3 0"
+    p = Partial(vib,Pie.from_string(s)).scale_f(n).scale_a(a[i])
+    partials.append(p)
 
   # Experiment with random frequency modulation on attack.
-  fm_amount = 0.100
-  for p in partials:
+  fm_amount = 0.0 # 0.100 produces a noticeable effect
+  for i in range(len(partials)):
+    p = partials[i]
     n_fm = int(10*length_sec)
     t = []
     f = []
@@ -66,7 +61,7 @@ def main():
       tt = tt*0.5
       t.append(tt)
       r = fm_amount*(random.random()-0.5)
-      end_attack = 0.05
+      end_attack = delay_attack[i]+attack_len
       if tt>end_attack:
         r = r*math.exp(-(tt-end_attack)/0.1)
       f.append(r*p.f(0))
@@ -74,15 +69,12 @@ def main():
     p.f = p.f.sum(fm)
     p.phi = p.f.scalar_mult(math.pi*2.0).antiderivative()
 
-  print(f"100 partials[0].time_range()={partials[0].time_range()}") # qwe
-
   # resp = lambda f:1.0 # no filtering
   # resp = lambda f:instruments.log_comb_response(f)
   resp = lambda f:instruments.fisher_response(f)
   for partial in partials:
     partial.filter(resp)
 
-  print(f"200 partials[0].time_range()={partials[0].time_range()}") # qwe
   osc = Oscillator({'n_samples':n_samples,'n_instances':n_instances,'t0':0.0,'dt':1/sample_freq},partials)
 
   if False:
