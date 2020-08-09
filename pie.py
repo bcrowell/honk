@@ -212,16 +212,23 @@ class Pie(PPoly):
       x2 = new_x[i+1]
       h = x2-x1
       eps = h*1.0e-5
+      # Evaluate P, Q, P', and Q' at the end-points.
+      p1 = self(x1)
+      p2 = self(x2)
+      q1 = q(x1)
+      q2 = q(x2)
+      p1d = pd(x1+eps)
+      p2d = pd(x2-eps)
+      q1d = qd(x1+eps)
+      q2d = qd(x2-eps)
+      if op=='+':
+        # Define R(x)=P(x)+Q(x).
+        r1 = p1+q1
+        r2 = p2+q2
+        r1d = p1d+q1d
+        r2d = p2d+q2d
       if op=='*':
-        # Define R(x)=P(x)Q(x). Evaluate P, Q, P', and Q' at the end-points.
-        p1 = self(x1)
-        p2 = self(x2)
-        q1 = q(x1)
-        q2 = q(x2)
-        p1d = pd(x1+eps)
-        p2d = pd(x2-eps)
-        q1d = qd(x1+eps)
-        q2d = qd(x2-eps)
+        # Define R(x)=P(x)Q(x).
         r1 = p1*q1
         r2 = p2*q2
         # Use Leibniz rule to evaluate R and R' at the end-points.
