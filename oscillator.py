@@ -201,9 +201,9 @@ class OscillatorLowLevel:
       b = min(b,bb)
     return (a,b)    
 
-  def in_time_range(self,t):
+  def in_time_range(self,t,eps=0.0001):
     a,b = self.defined_time_range()
-    return (t>=a and t<=b)
+    return (t>=a-eps and t<=b+eps)
 
   def __str__(self):
     result = ''

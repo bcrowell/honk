@@ -37,6 +37,19 @@ def main():
         p = copy.deepcopy(p1).scale_f(n).scale_a(a[i])
       partials.append(copy.deepcopy(p))
 
+  # Experiment with random frequency modulation.
+  for p in partials:
+    n_fm = int(20*length_sec)
+    t = []
+    f = []
+    for i in range(n_fm):
+      t.append((i/float(n_fm))*length_sec)
+      r = 0.030*(random.random()-0.5)
+      f.append(r*p.f(0))
+    fm = Pie.join_extrema(t,f)
+    p.f = p.f.sum(fm)
+    p.phi = p.f.scalar_mult(math.pi*2.0).antiderivative()
+
   # resp = lambda f:1.0 # no filtering
   # resp = lambda f:instruments.log_comb_response(f)
   resp = lambda f:instruments.fisher_response(f)
