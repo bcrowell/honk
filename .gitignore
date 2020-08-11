@@ -1,2 +1,5 @@
 *~
 tests
+.o
+.so
+__pycache__
